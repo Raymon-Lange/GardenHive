@@ -19,7 +19,7 @@ const harvestSchema = new mongoose.Schema(
 );
 
 // Auto-derive season from harvestedAt before save
-harvestSchema.pre('save', function (next) {
+harvestSchema.pre('save', function () {
   const d = this.harvestedAt || new Date();
   const month = d.getMonth(); // 0-based
   const year = d.getFullYear();
@@ -29,7 +29,6 @@ harvestSchema.pre('save', function (next) {
   else if (month >= 8 && month <= 10) seasonName = 'Fall';
   else seasonName = 'Winter';
   this.season = `${seasonName} ${year}`;
-  next();
 });
 
 module.exports = mongoose.model('Harvest', harvestSchema);

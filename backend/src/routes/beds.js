@@ -40,8 +40,8 @@ router.post('/', requireAuth, async (req, res) => {
     const bed = await GardenBed.create({
       userId: req.userId,
       name,
-      rows: Math.min(rows, 20),
-      cols: Math.min(cols, 20),
+      rows: Math.min(rows, 50),
+      cols: Math.min(cols, 50),
       cells: [],
     });
     res.status(201).json(bed);
