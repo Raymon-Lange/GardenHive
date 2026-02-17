@@ -1,0 +1,74 @@
+import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { Leaf, Grid3X3, BarChart3, ChevronRight } from 'lucide-react';
+
+const features = [
+  {
+    icon: Grid3X3,
+    title: 'Plan your beds',
+    desc: 'Build square foot garden grids and assign plants to every cell from our built-in plant library.',
+  },
+  {
+    icon: Leaf,
+    title: 'Log harvests fast',
+    desc: 'Record what you picked — by weight or count — in seconds. Never lose track of your yields.',
+  },
+  {
+    icon: BarChart3,
+    title: 'See what you grew',
+    desc: 'Cumulative totals by plant and season give you a clear picture of your garden\'s output.',
+  },
+];
+
+export default function Landing() {
+  const { isAuthenticated } = useAuth();
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-garden-50 to-garden-100">
+      {/* Nav */}
+      <header className="flex items-center justify-between px-8 py-5 max-w-5xl mx-auto">
+        <span className="text-2xl font-bold text-garden-800">🌿 GardenHive</span>
+        <div className="flex gap-3">
+          {isAuthenticated ? (
+            <Link to="/dashboard" className="btn-primary">Go to Dashboard</Link>
+          ) : (
+            <>
+              <Link to="/login" className="btn-secondary">Sign in</Link>
+              <Link to="/signup" className="btn-primary">Get started</Link>
+            </>
+          )}
+        </div>
+      </header>
+
+      {/* Hero */}
+      <section className="max-w-4xl mx-auto px-8 pt-20 pb-16 text-center">
+        <h1 className="text-5xl font-bold text-garden-900 leading-tight mb-5">
+          Your square foot garden,<br />
+          <span className="text-garden-600">tracked and thriving</span>
+        </h1>
+        <p className="text-lg text-garden-700 max-w-xl mx-auto mb-10">
+          Plan garden beds on an interactive grid, log every harvest, and watch your season totals grow.
+          Calm, earthy, and built for serious home gardeners.
+        </p>
+        <Link to="/signup" className="btn-primary text-base px-6 py-3">
+          Start for free <ChevronRight size={18} />
+        </Link>
+      </section>
+
+      {/* Features */}
+      <section className="max-w-4xl mx-auto px-8 pb-24">
+        <div className="grid md:grid-cols-3 gap-6">
+          {features.map(({ icon: Icon, title, desc }) => (
+            <div key={title} className="card p-6">
+              <div className="w-10 h-10 bg-garden-100 rounded-lg flex items-center justify-center mb-4">
+                <Icon size={20} className="text-garden-600" />
+              </div>
+              <h3 className="font-semibold text-garden-900 mb-2">{title}</h3>
+              <p className="text-sm text-garden-600 leading-relaxed">{desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+}
