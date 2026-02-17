@@ -16,6 +16,9 @@ const gardenBedSchema = new mongoose.Schema(
     rows: { type: Number, required: true, min: 1, max: 50 },
     cols: { type: Number, required: true, min: 1, max: 50 },
     cells: [cellSchema],
+    // Top-left position in the overall garden map (sq ft grid)
+    mapRow: { type: Number, default: null },
+    mapCol: { type: Number, default: null },
   },
   { timestamps: true }
 );

@@ -45,6 +45,8 @@ function parseLayout(csvPath) {
       name: BED_NAMES[Number(id)] || `Bed ${id}`,
       rows: b.maxR - b.minR + 1,
       cols: b.maxC - b.minC + 1,
+      mapRow: b.minR,
+      mapCol: b.minC,
     }));
 }
 
@@ -79,9 +81,11 @@ async function seed() {
       name: bed.name,
       rows: bed.rows,
       cols: bed.cols,
+      mapRow: bed.mapRow,
+      mapCol: bed.mapCol,
       cells: [],
     });
-    console.log(`  Created: ${bed.name} (${bed.rows}×${bed.cols})`);
+    console.log(`  Created: ${bed.name} (${bed.rows}×${bed.cols}) @ map [${bed.mapRow},${bed.mapCol}]`);
   }
 
   console.log(`\nSeeded ${bedDefs.length} beds for ${user.name}.`);

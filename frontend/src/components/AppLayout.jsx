@@ -1,12 +1,13 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LayoutDashboard, Rows3, Leaf, LogOut } from 'lucide-react';
+import { LayoutDashboard, Rows3, Leaf, LogOut, Map } from 'lucide-react';
 import clsx from 'clsx';
 
 const navItems = [
-  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/beds', label: 'Garden Beds', icon: Rows3 },
-  { to: '/harvests', label: 'Harvests', icon: Leaf },
+  { to: '/dashboard', label: 'Dashboard',   icon: LayoutDashboard },
+  { to: '/map',       label: 'Garden Map',  icon: Map },
+  { to: '/beds',      label: 'Garden Beds', icon: Rows3 },
+  { to: '/harvests',  label: 'Harvests',    icon: Leaf },
 ];
 
 export default function AppLayout({ children }) {
