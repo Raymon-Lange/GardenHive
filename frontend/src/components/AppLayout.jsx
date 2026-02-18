@@ -1,12 +1,13 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LayoutDashboard, Leaf, LogOut, Map } from 'lucide-react';
+import { LayoutDashboard, Leaf, LogOut, Map, BarChart2 } from 'lucide-react';
 import clsx from 'clsx';
 
 const navItems = [
   { to: '/dashboard', label: 'Dashboard',  icon: LayoutDashboard },
   { to: '/map',       label: 'Garden Map', icon: Map },
   { to: '/harvests',  label: 'Harvests',   icon: Leaf },
+  { to: '/analytics', label: 'Analytics',  icon: BarChart2 },
 ];
 
 export default function AppLayout({ children }) {

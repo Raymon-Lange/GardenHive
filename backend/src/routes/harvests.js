@@ -56,6 +56,91 @@ router.get('/totals', requireAuth, async (req, res) => {
   }
 });
 
+// GET /api/harvests/yoy — monthly totals grouped by year (all years, for line chart)
+router.get('/yoy', requireAuth, async (req, res) => {
+  try {
+    const { plantId } = req.query;
+    const match = { userId: require('mongoose').Types.ObjectId.createFromHexString(req.userId) };
+    if (plantId) match.plantId = require('mongoose').Types.ObjectId.createFromHexString(plantId);
+
+    const data = await Harvest.aggregate([
+      { $match: match },
+      {
+        $group: {
+          _id: { year: { $year: '$harvestedAt' }, month: { $month: '$harvestedAt' } },
+          totalOz: { $sum: '$quantity' },
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { '_id.year': 1, '_id.month': 1 } },
+    ]);
+
+    // Reshape into { year: { Jan: {oz, count}, ... } }
+    const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const byYear = {};
+    data.forEach(({ _id, totalOz, count }) => {
+      const yr = String(_id.year);
+      if (!byYear[yr]) byYear[yr] = {};
+      byYear[yr][MONTHS[_id.month - 1]] = { oz: Math.round(totalOz), count };
+    });
+
+    // Fill missing months with 0
+    const years = Object.keys(byYear).sort();
+    const result = MONTHS.map((month) => {
+      const row = { month };
+      years.forEach((yr) => {
+        row[`${yr}_oz`]    = byYear[yr][month]?.oz    || 0;
+        row[`${yr}_count`] = byYear[yr][month]?.count || 0;
+      });
+      return row;
+    });
+
+    res.json({ years, data: result });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/harvests/weekly?year=2025&plantId= — week-by-week totals for a year
+router.get('/weekly', requireAuth, async (req, res) => {
+  try {
+    const year    = parseInt(req.query.year) || new Date().getFullYear();
+    const plantId = req.query.plantId;
+
+    const match = {
+      userId: require('mongoose').Types.ObjectId.createFromHexString(req.userId),
+      harvestedAt: { $gte: new Date(`${year}-01-01`), $lte: new Date(`${year}-12-31T23:59:59`) },
+    };
+    if (plantId) match.plantId = require('mongoose').Types.ObjectId.createFromHexString(plantId);
+
+    const data = await Harvest.aggregate([
+      { $match: match },
+      {
+        $group: {
+          _id: { week: { $isoWeek: '$harvestedAt' } },
+          totalOz: { $sum: '$quantity' },
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { '_id.week': 1 } },
+    ]);
+
+    // Fill all 52 weeks
+    const result = Array.from({ length: 52 }, (_, i) => {
+      const week = i + 1;
+      const found = data.find((d) => d._id.week === week);
+      return { week: `Wk ${week}`, oz: found ? Math.round(found.totalOz) : 0, count: found?.count || 0 };
+    });
+
+    // Trim trailing empty weeks
+    let last = result.length - 1;
+    while (last > 0 && result[last].oz === 0 && result[last].count === 0) last--;
+    res.json(result.slice(0, last + 1));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // GET /api/harvests/years — distinct years with harvest data
 router.get('/years', requireAuth, async (req, res) => {
   try {

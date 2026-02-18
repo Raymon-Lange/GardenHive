@@ -10,6 +10,7 @@ import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
 import GardenBeds from './pages/GardenBeds';
 import GardenMap from './pages/GardenMap';
+import Analytics from './pages/Analytics';
 import BedDetail from './pages/BedDetail';
 import Harvests from './pages/Harvests';
 
@@ -38,6 +39,7 @@ export default function App() {
             <Route path="/beds" element={<PrivatePage><GardenBeds /></PrivatePage>} />
             <Route path="/beds/:id" element={<PrivatePage><BedDetail /></PrivatePage>} />
             <Route path="/map" element={<PrivatePage><GardenMap /></PrivatePage>} />
+            <Route path="/analytics" element={<PrivatePage><Analytics /></PrivatePage>} />
             <Route path="/harvests" element={<PrivatePage><Harvests /></PrivatePage>} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
