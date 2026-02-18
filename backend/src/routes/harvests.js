@@ -51,6 +51,57 @@ router.get('/totals', requireAuth, async (req, res) => {
   }
 });
 
+// GET /api/harvests/years — distinct years with harvest data
+router.get('/years', requireAuth, async (req, res) => {
+  try {
+    const years = await Harvest.aggregate([
+      { $match: { userId: require('mongoose').Types.ObjectId.createFromHexString(req.userId) } },
+      { $group: { _id: { $year: '$harvestedAt' } } },
+      { $sort: { _id: -1 } },
+    ]);
+    res.json(years.map((y) => y._id));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/harvests/monthly?year=2025 — oz totals per month for the year
+router.get('/monthly', requireAuth, async (req, res) => {
+  try {
+    const year = parseInt(req.query.year) || new Date().getFullYear();
+    const match = {
+      userId: require('mongoose').Types.ObjectId.createFromHexString(req.userId),
+      harvestedAt: {
+        $gte: new Date(`${year}-01-01`),
+        $lte: new Date(`${year}-12-31T23:59:59`),
+      },
+    };
+
+    const monthly = await Harvest.aggregate([
+      { $match: match },
+      {
+        $group: {
+          _id: { month: { $month: '$harvestedAt' } },
+          totalOz: { $sum: '$quantity' },
+          entries: { $sum: 1 },
+        },
+      },
+      { $sort: { '_id.month': 1 } },
+    ]);
+
+    // Fill all 12 months (so the line graph has a complete x-axis)
+    const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const result = MONTHS.map((name, i) => {
+      const found = monthly.find((m) => m._id.month === i + 1);
+      return { month: name, totalOz: found ? Math.round(found.totalOz) : 0, entries: found?.entries || 0 };
+    });
+
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // GET /api/harvests
 router.get('/', requireAuth, async (req, res) => {
   try {
