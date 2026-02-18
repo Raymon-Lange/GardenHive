@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '../lib/api';
+import { Leaf } from 'lucide-react';
 import {
   LineChart, Line,
   PieChart, Pie,
@@ -220,6 +221,19 @@ export default function Analytics() {
             Clear filter
           </button>
         )}
+      </div>
+
+      {/* Stat: plant types */}
+      <div className="mb-6">
+        <div className="card p-5 flex items-center gap-4 sm:w-64">
+          <div className="w-10 h-10 bg-garden-100 rounded-lg flex items-center justify-center shrink-0">
+            <Leaf size={20} className="text-garden-600" />
+          </div>
+          <div>
+            <p className="text-2xl font-bold text-garden-900">{barData.length}</p>
+            <p className="text-xs text-garden-500">Plant types harvested · {year}</p>
+          </div>
+        </div>
       </div>
 
       {/* ── Chart 1: By plant pie ───────────────────────────────────────── */}

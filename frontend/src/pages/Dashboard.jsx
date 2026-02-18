@@ -1,12 +1,15 @@
-import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import api from '../lib/api';
 import { useAuth } from '../context/AuthContext';
-import { Rows3, Leaf, ChevronRight, TrendingUp } from 'lucide-react';
+import { Rows3, ChevronRight, TrendingUp, Plus } from 'lucide-react';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
 } from 'recharts';
+
+const UNITS = ['lbs', 'oz', 'kg', 'g', 'count'];
 
 const PIE_COLORS = [
   '#529440', '#a97849', '#fbbf24', '#74b060', '#d97706',
@@ -53,6 +56,17 @@ function useBeds() {
   });
 }
 
+function usePlants() {
+  return useQuery({
+    queryKey: ['plants'],
+    queryFn: () => api.get('/plants').then((r) => r.data),
+  });
+}
+
+function todayISO() {
+  return new Date().toISOString().slice(0, 10);
+}
+
 function rollingLabel() {
   const now = new Date();
   const from = new Date(now);
@@ -64,10 +78,42 @@ function rollingLabel() {
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const { data: totals = [] } = useHarvestTotals();
   const { data: monthly = [] } = useMonthly();
   const { data: recent = [] } = useRecentHarvests();
   const { data: beds = [] } = useBeds();
+  const { data: plants = [] } = usePlants();
+
+  const [form, setForm] = useState({
+    plantId: '', bedId: '', quantity: '', unit: 'lbs',
+    harvestedAt: todayISO(), notes: '',
+  });
+  const [formError, setFormError] = useState('');
+
+  const logHarvest = useMutation({
+    mutationFn: (body) => api.post('/harvests', body).then((r) => r.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['harvests'] });
+      queryClient.invalidateQueries({ queryKey: ['harvests', 'totals'] });
+      setForm((f) => ({ ...f, plantId: '', bedId: '', quantity: '', notes: '' }));
+      setFormError('');
+    },
+    onError: (err) => setFormError(err.response?.data?.error || 'Failed to log harvest'),
+  });
+
+  function handleHarvestSubmit(e) {
+    e.preventDefault();
+    if (!form.plantId || !form.quantity) { setFormError('Plant and quantity are required.'); return; }
+    logHarvest.mutate({
+      plantId: form.plantId,
+      bedId: form.bedId || undefined,
+      quantity: Number(form.quantity),
+      unit: form.unit,
+      harvestedAt: form.harvestedAt,
+      notes: form.notes,
+    });
+  }
 
   // Group totals by plant
   const byPlant = totals.reduce((acc, t) => {
@@ -100,10 +146,9 @@ export default function Dashboard() {
       </div>
 
       {/* Stats row */}
-      <div className="grid sm:grid-cols-3 gap-4 mb-8">
-        <StatCard icon={Rows3}      label="Garden beds"           value={beds.length}                             link="/map" />
-        <StatCard icon={Leaf}       label="Plant types harvested"  value={plantCards.length}                      link="/harvests" sublabel="last 12 months" />
-        <StatCard icon={TrendingUp} label="Total harvested"        value={`${Math.round(totalOz / 16)} lbs`}      link="/harvests" sublabel="last 12 months" />
+      <div className="grid sm:grid-cols-2 gap-4 mb-8">
+        <StatCard icon={Rows3}      label="Garden beds"     value={beds.length}                        link="/map" />
+        <StatCard icon={TrendingUp} label="Total harvested" value={`${Math.round(totalOz / 16)} lbs`} link="/harvests" sublabel="last 12 months" />
       </div>
 
       {/* Charts */}
@@ -181,35 +226,61 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Plant totals */}
-      {plantCards.length > 0 && (
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="font-semibold text-garden-900">Totals by plant</h2>
-            <Link to="/harvests" className="text-sm text-garden-600 hover:text-garden-800 flex items-center gap-1">
-              View all <ChevronRight size={14} />
-            </Link>
+      {/* Quick harvest entry */}
+      <div className="card p-5 mb-8">
+        <h2 className="font-semibold text-garden-900 mb-4 flex items-center gap-2">
+          <Plus size={16} /> Log a harvest
+        </h2>
+        {formError && (
+          <div className="mb-4 px-3 py-2 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg">
+            {formError}
           </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {plantCards.map((p) => (
-              <div key={p.plantId} className="card p-4 flex items-start gap-3">
-                <span className="text-3xl">{p.plantEmoji}</span>
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-garden-900 truncate">{p.plantName}</p>
-                  <div className="mt-1 space-y-0.5">
-                    {p.entries.map((e) => (
-                      <p key={e.unit} className="text-sm text-garden-600">
-                        <span className="font-semibold text-garden-800">{formatQty(e.total)}</span> {e.unit}
-                      </p>
-                    ))}
-                  </div>
-                  <p className="text-xs text-garden-400 mt-1">{p.count} log{p.count !== 1 ? 's' : ''}</p>
-                </div>
+        )}
+        <form onSubmit={handleHarvestSubmit}>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+            <div>
+              <label className="label">Plant *</label>
+              <select className="input" value={form.plantId} onChange={(e) => setForm((f) => ({ ...f, plantId: e.target.value }))} required>
+                <option value="">Select a plant…</option>
+                {plants.map((p) => (
+                  <option key={p._id} value={p._id}>{p.emoji} {p.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="label">Garden bed</label>
+              <select className="input" value={form.bedId} onChange={(e) => setForm((f) => ({ ...f, bedId: e.target.value }))}>
+                <option value="">No specific bed</option>
+                {beds.map((b) => (
+                  <option key={b._id} value={b._id}>{b.name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <label className="label">Quantity *</label>
+                <input type="number" className="input" min={0} step="any" placeholder="0" value={form.quantity} onChange={(e) => setForm((f) => ({ ...f, quantity: e.target.value }))} required />
               </div>
-            ))}
+              <div className="w-20">
+                <label className="label">Unit</label>
+                <select className="input" value={form.unit} onChange={(e) => setForm((f) => ({ ...f, unit: e.target.value }))}>
+                  {UNITS.map((u) => <option key={u} value={u}>{u}</option>)}
+                </select>
+              </div>
+            </div>
+            <div>
+              <label className="label">Date</label>
+              <input type="date" className="input" value={form.harvestedAt} onChange={(e) => setForm((f) => ({ ...f, harvestedAt: e.target.value }))} />
+            </div>
           </div>
-        </div>
-      )}
+          <div className="flex items-center gap-4">
+            <input type="text" className="input flex-1" placeholder="Notes (optional)" value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} />
+            <button type="submit" className="btn-primary shrink-0" disabled={logHarvest.isPending}>
+              {logHarvest.isPending ? 'Saving…' : 'Log harvest'}
+            </button>
+          </div>
+        </form>
+      </div>
 
       {/* Recent harvests */}
       {recent.length > 0 && (
