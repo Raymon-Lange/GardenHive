@@ -17,27 +17,27 @@ const PIE_COLORS = [
   '#a0cc8e', '#fcd34d', '#2a4c22', '#e5d3be', '#fde68a',
 ];
 
-// Rolling 12-month window
-function rolling12() {
+// Rolling 6-month window
+function rolling6() {
   const to = new Date();
   const from = new Date(to);
-  from.setMonth(from.getMonth() - 11);
+  from.setMonth(from.getMonth() - 5);
   from.setDate(1);
   from.setHours(0, 0, 0, 0);
   return { from: from.toISOString(), to: to.toISOString() };
 }
 
 function useHarvestTotals() {
-  const { from, to } = rolling12();
+  const { from, to } = rolling6();
   return useQuery({
-    queryKey: ['harvests', 'totals', 'rolling12'],
+    queryKey: ['harvests', 'totals', 'rolling6'],
     queryFn: () => api.get('/harvests/totals', { params: { from, to } }).then((r) => r.data),
   });
 }
 
 function useMonthly() {
   return useQuery({
-    queryKey: ['harvests', 'monthly', 'rolling12'],
+    queryKey: ['harvests', 'monthly', 'rolling6'],
     queryFn: () => api.get('/harvests/monthly').then((r) => r.data),
   });
 }
@@ -70,7 +70,7 @@ function todayISO() {
 function rollingLabel() {
   const now = new Date();
   const from = new Date(now);
-  from.setMonth(from.getMonth() - 11);
+  from.setMonth(from.getMonth() - 5);
   from.setDate(1);
   const fmt = (d) => d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
   return `${fmt(from)} – ${fmt(now)}`;
@@ -142,14 +142,14 @@ export default function Dashboard() {
         <h1 className="text-2xl font-bold text-garden-900">
           Good {greeting()}, {user?.name?.split(' ')[0]} 🌱
         </h1>
-        <p className="text-garden-600 text-sm mt-1">Rolling 12 months · {label}</p>
+        <p className="text-garden-600 text-sm mt-1">Rolling 6 months · {label}</p>
       </div>
 
       {/* Stats row */}
       <div className="grid sm:grid-cols-3 gap-4 mb-8">
         <StatCard icon={Rows3}      label="Garden beds"          value={beds.length}                             link="/map" />
-        <StatCard icon={Leaf}       label="Plant types harvested" value={plantCards.length}                      link="/harvests" sublabel="last 12 months" />
-        <StatCard icon={TrendingUp} label="Total harvested"       value={`${Math.round(totalOz / 16)} lbs`}      link="/harvests" sublabel="last 12 months" />
+        <StatCard icon={Leaf}       label="Plant types harvested" value={plantCards.length}                      link="/harvests" sublabel="last 6 months" />
+        <StatCard icon={TrendingUp} label="Total harvested"       value={`${Math.round(totalOz / 16)} lbs`}      link="/harvests" sublabel="last 6 months" />
       </div>
 
       {/* Charts */}
@@ -185,35 +185,39 @@ export default function Dashboard() {
           <div className="card p-5">
             <h2 className="font-semibold text-garden-900 mb-1">Harvest by plant (oz)</h2>
             <p className="text-xs text-garden-500 mb-4">{label}</p>
-            <ResponsiveContainer width="100%" height={220}>
-              <PieChart>
-                <Pie
-                  data={pieData}
-                  cx="42%"
-                  cy="50%"
-                  innerRadius={55}
-                  outerRadius={90}
-                  paddingAngle={2}
-                  dataKey="value"
-                >
-                  {pieData.map((_, i) => (
-                    <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{ borderRadius: 8, border: '1px solid #c8e2bb', fontSize: 12 }}
-                  formatter={(v, name) => [`${v} oz`, name]}
-                />
-                <Legend
-                  layout="vertical"
-                  align="right"
-                  verticalAlign="middle"
-                  iconType="circle"
-                  iconSize={8}
-                  formatter={(v) => <span style={{ fontSize: 11, color: '#3e7630' }}>{v}</span>}
-                />
-              </PieChart>
-            </ResponsiveContainer>
+            {pieData.length === 0 ? (
+              <div className="flex items-center justify-center h-[220px] text-garden-400 text-sm">No data</div>
+            ) : (
+              <ResponsiveContainer width="100%" height={220}>
+                <PieChart>
+                  <Pie
+                    data={pieData}
+                    cx="42%"
+                    cy="50%"
+                    innerRadius={55}
+                    outerRadius={90}
+                    paddingAngle={2}
+                    dataKey="value"
+                  >
+                    {pieData.map((_, i) => (
+                      <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{ borderRadius: 8, border: '1px solid #c8e2bb', fontSize: 12 }}
+                    formatter={(v, name) => [`${v} oz`, name]}
+                  />
+                  <Legend
+                    layout="vertical"
+                    align="right"
+                    verticalAlign="middle"
+                    iconType="circle"
+                    iconSize={8}
+                    formatter={(v) => <span style={{ fontSize: 11, color: '#3e7630' }}>{v}</span>}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </div>
       )}
@@ -221,7 +225,7 @@ export default function Dashboard() {
       {/* No data in rolling window — show helpful message */}
       {!monthly.some((m) => m.totalOz > 0) && (
         <div className="card p-8 text-center mb-8">
-          <p className="text-garden-600 font-medium">No harvests in the last 12 months</p>
+          <p className="text-garden-600 font-medium">No harvests in the last 6 months</p>
           <p className="text-garden-500 text-sm mt-1">Log a harvest to see your charts.</p>
           <Link to="/harvests" className="btn-primary mt-4 inline-flex">Log a harvest</Link>
         </div>
@@ -284,9 +288,11 @@ export default function Dashboard() {
       </div>
 
       {/* Recent harvests */}
-      {recent.length > 0 && (
-        <div>
-          <h2 className="font-semibold text-garden-900 mb-3">Recent entries</h2>
+      <div>
+        <h2 className="font-semibold text-garden-900 mb-3">Recent entries</h2>
+        {recent.length === 0 ? (
+          <div className="card p-6 text-center text-garden-400 text-sm">No data</div>
+        ) : (
           <div className="card divide-y divide-garden-50">
             {recent.slice(0, 6).map((h) => (
               <div key={h._id} className="flex items-center justify-between px-4 py-3">
@@ -305,7 +311,8 @@ export default function Dashboard() {
               </div>
             ))}
           </div>
-        </div>
+        )}
+      </div>
       )}
     </div>
   );

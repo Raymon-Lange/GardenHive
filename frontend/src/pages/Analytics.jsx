@@ -53,13 +53,15 @@ function useYoY(plantId) {
 }
 
 function useByPlant(year, plantId) {
-  const from = `${year}-01-01`;
-  const to   = `${year}-12-31T23:59:59`;
   return useQuery({
     queryKey: ['harvests', 'totals', year, plantId],
-    queryFn: () =>
-      api.get('/harvests/totals', { params: { from, to, ...(plantId ? { plantId } : {}) } })
-        .then((r) => r.data),
+    queryFn: () => {
+      const params = {
+        ...(year !== 'all' ? { from: `${year}-01-01`, to: `${year}-12-31T23:59:59` } : {}),
+        ...(plantId ? { plantId } : {}),
+      };
+      return api.get('/harvests/totals', { params }).then((r) => r.data);
+    },
     enabled: !!year,
   });
 }
@@ -109,7 +111,7 @@ function UnitToggle({ value, onChange }) {
 function EmptyChart() {
   return (
     <div className="flex items-center justify-center h-52 text-garden-400 text-sm">
-      No data for this selection
+      No data
     </div>
   );
 }
@@ -127,9 +129,10 @@ export default function Analytics() {
   const year = selectedYear ?? years[0];
 
   // Data
-  const { data: yoy     = { years: [], data: [] } } = useYoY(selectedPlantId || undefined);
-  const { data: byPlant = [] }                       = useByPlant(year, selectedPlantId || undefined);
-  const { data: weekly  = [] }                       = useWeekly(year, selectedPlantId || undefined);
+  const { data: yoy          = { years: [], data: [] } } = useYoY(selectedPlantId || undefined);
+  const { data: byPlant      = [] } = useByPlant(year, selectedPlantId || undefined);
+  const { data: byPlantPrev  = [] } = useByPlant(year !== 'all' ? year - 1 : null, selectedPlantId || undefined);
+  const { data: weekly       = [] } = useWeekly(year !== 'all' ? year : null, selectedPlantId || undefined);
 
   // ── Chart 1: Year-over-year ──────────────────────────────────────────────
   const yoyDataKey = (yr) => unit === 'lbs' ? `${yr}_oz` : `${yr}_count`;
@@ -149,6 +152,17 @@ export default function Analytics() {
       .map((d) => ({ ...d, value: unit === 'lbs' ? ozToLbs(d.oz) : d.count }))
       .sort((a, b) => b.value - a.value);
   }, [byPlant, unit]);
+
+  const prevBarMap = useMemo(() => {
+    const grouped = {};
+    byPlantPrev.forEach((t) => {
+      const key = `${t.plantEmoji} ${t.plantName}`;
+      if (!grouped[key]) grouped[key] = { oz: 0, count: 0 };
+      grouped[key].oz    += t.total;
+      grouped[key].count += t.count;
+    });
+    return grouped;
+  }, [byPlantPrev]);
 
   // ── Chart 3: Weekly area ─────────────────────────────────────────────────
   const areaData = weekly.map((w) => ({
@@ -176,6 +190,7 @@ export default function Analytics() {
   }, [yoy, unit]);
 
   const selectedPlant = plants.find((p) => p._id === selectedPlantId);
+  const yearLabel = year === 'all' ? 'All time' : year;
 
   const [hoveredPlant, setHoveredPlant] = useState(null);
 
@@ -197,8 +212,9 @@ export default function Analytics() {
           <select
             className="input w-32"
             value={year ?? ''}
-            onChange={(e) => setSelectedYear(Number(e.target.value))}
+            onChange={(e) => setSelectedYear(e.target.value === 'all' ? 'all' : Number(e.target.value))}
           >
+            <option value="all">All time</option>
             {years.map((y) => <option key={y} value={y}>{y}</option>)}
           </select>
         </div>
@@ -230,7 +246,7 @@ export default function Analytics() {
       <div className="grid lg:grid-cols-2 gap-6 mb-6">
         <SectionCard
           title="Harvest by plant type"
-          subtitle={`${year} · ${unit === 'lbs' ? 'total weight' : 'number of harvest logs'}${selectedPlant ? ` · filtered to ${selectedPlant.name}` : ''}`}
+          subtitle={`${yearLabel} · ${unit === 'lbs' ? 'total weight' : 'number of harvest logs'}${selectedPlant ? ` · filtered to ${selectedPlant.name}` : ''}`}
         >
           {barData.length === 0 ? <EmptyChart /> : (
             <ResponsiveContainer width="100%" height={340}>
@@ -268,7 +284,7 @@ export default function Analytics() {
           )}
         </SectionCard>
 
-        <PlantHarvestSummary data={barData} year={year} hoveredPlant={hoveredPlant} />
+        <PlantHarvestSummary data={barData} year={yearLabel} hoveredPlant={hoveredPlant} prevBarMap={prevBarMap} />
       </div>
 
       {/* ── Chart 2: Year-over-year line ────────────────────────────────── */}
@@ -355,7 +371,7 @@ export default function Analytics() {
       {/* ── Chart 5: Weekly area ────────────────────────────────────────── */}
       <SectionCard
         title="Weekly harvest volume"
-        subtitle={`${year} · week by week${selectedPlant ? ` · ${selectedPlant.emoji} ${selectedPlant.name}` : ' · all plants'}`}
+        subtitle={`${yearLabel} · week by week${selectedPlant ? ` · ${selectedPlant.emoji} ${selectedPlant.name}` : ' · all plants'}`}
       >
         {areaData.every((w) => w.value === 0) ? <EmptyChart /> : (
           <ResponsiveContainer width="100%" height={260}>

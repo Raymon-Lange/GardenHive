@@ -1,9 +1,22 @@
+import { ArrowUp, ArrowDown } from 'lucide-react';
+
 function ozToLbs(oz) {
   return Math.round((oz / 16) * 10) / 10;
 }
 
-export default function PlantHarvestSummary({ data = [], year, hoveredPlant = null }) {
-  if (data.length === 0) return null;
+function Trend({ current, prev }) {
+  if (!prev || prev === 0) return null;
+  if (current > prev) return <ArrowUp size={14} className="text-green-500 shrink-0" />;
+  if (current < prev) return <ArrowDown size={14} className="text-red-400 shrink-0" />;
+  return null;
+}
+
+export default function PlantHarvestSummary({ data = [], year, hoveredPlant = null, prevBarMap = {} }) {
+  if (data.length === 0) return (
+    <div className="card p-6 text-center text-garden-400 text-sm flex items-center justify-center">
+      No data
+    </div>
+  );
 
   return (
     <div className="card overflow-hidden">
@@ -17,16 +30,21 @@ export default function PlantHarvestSummary({ data = [], year, hoveredPlant = nu
             <th className="text-left px-5 py-3 font-medium text-garden-600">Plant</th>
             <th className="text-right px-5 py-3 font-medium text-garden-600">Total weight</th>
             <th className="text-right px-5 py-3 font-medium text-garden-600">Harvests</th>
+            <th className="px-5 py-3" />
           </tr>
         </thead>
         <tbody>
           {data.map((p) => {
             const highlighted = hoveredPlant === p.name;
+            const prev = prevBarMap[p.name];
             return (
               <tr key={p.name} className={`border-b border-garden-50 transition-colors ${highlighted ? 'bg-garden-100' : 'hover:bg-garden-50'}`}>
-                <td className={`px-5 py-3 font-medium ${highlighted ? 'text-garden-900' : 'text-garden-900'}`}>{p.name}</td>
+                <td className="px-5 py-3 font-medium text-garden-900">{p.name}</td>
                 <td className={`px-5 py-3 text-right ${highlighted ? 'font-semibold text-garden-900' : 'text-garden-700'}`}>{ozToLbs(p.oz)} lbs</td>
                 <td className={`px-5 py-3 text-right ${highlighted ? 'font-semibold text-garden-900' : 'text-garden-500'}`}>{p.count}</td>
+                <td className="px-5 py-3 flex justify-end items-center">
+                  <Trend current={p.oz} prev={prev?.oz} />
+                </td>
               </tr>
             );
           })}
