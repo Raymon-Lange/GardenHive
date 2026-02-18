@@ -1,7 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '../lib/api';
-import { Leaf } from 'lucide-react';
 import PlantHarvestSummary from '../components/PlantHarvestSummary';
 import {
   LineChart, Line,
@@ -178,6 +177,8 @@ export default function Analytics() {
 
   const selectedPlant = plants.find((p) => p._id === selectedPlantId);
 
+  const [hoveredPlant, setHoveredPlant] = useState(null);
+
   return (
     <div>
       {/* Header */}
@@ -224,54 +225,51 @@ export default function Analytics() {
         )}
       </div>
 
-      {/* Stat: plant types */}
-      <div className="mb-6">
-        <div className="card p-5 flex items-center gap-4 sm:w-64">
-          <div className="w-10 h-10 bg-garden-100 rounded-lg flex items-center justify-center shrink-0">
-            <Leaf size={20} className="text-garden-600" />
-          </div>
-          <div>
-            <p className="text-2xl font-bold text-garden-900">{barData.length}</p>
-            <p className="text-xs text-garden-500">Plant types harvested · {year}</p>
-          </div>
-        </div>
-      </div>
 
-      {/* ── Chart 1: By plant pie ───────────────────────────────────────── */}
-      <SectionCard
-        title="Harvest by plant type"
-        subtitle={`${year} · ${unit === 'lbs' ? 'total weight' : 'number of harvest logs'}${selectedPlant ? ` · filtered to ${selectedPlant.name}` : ''}`}
-      >
-        {barData.length === 0 ? <EmptyChart /> : (
-          <ResponsiveContainer width="100%" height={280}>
-            <PieChart>
-              <Pie
-                data={barData}
-                dataKey="value"
-                nameKey="name"
-                cx="50%"
-                cy="50%"
-                innerRadius={60}
-                outerRadius={100}
-                paddingAngle={2}
-              >
-                {barData.map((_, i) => (
-                  <Cell key={i} fill={BAR_COLORS[i % BAR_COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip
-                contentStyle={CHART_STYLE}
-                formatter={(val, name) => [unit === 'lbs' ? `${val} lbs` : `${val} logs`, name]}
-              />
-              <Legend
-                formatter={(v) => (
-                  <span style={{ fontSize: 11, color: '#3e7630' }}>{v}</span>
-                )}
-              />
-            </PieChart>
-          </ResponsiveContainer>
-        )}
-      </SectionCard>
+      {/* ── Chart 1: By plant pie + summary table ───────────────────────── */}
+      <div className="grid lg:grid-cols-2 gap-6 mb-6">
+        <SectionCard
+          title="Harvest by plant type"
+          subtitle={`${year} · ${unit === 'lbs' ? 'total weight' : 'number of harvest logs'}${selectedPlant ? ` · filtered to ${selectedPlant.name}` : ''}`}
+        >
+          {barData.length === 0 ? <EmptyChart /> : (
+            <ResponsiveContainer width="100%" height={340}>
+              <PieChart>
+                <Pie
+                  data={barData}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={100}
+                  paddingAngle={2}
+                  onMouseEnter={(data) => setHoveredPlant(data.name)}
+                  onMouseLeave={() => setHoveredPlant(null)}
+                >
+                  {barData.map((_, i) => (
+                    <Cell key={i} fill={BAR_COLORS[i % BAR_COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  contentStyle={CHART_STYLE}
+                  formatter={(val, name) => [unit === 'lbs' ? `${val} lbs` : `${val} logs`, name]}
+                />
+                <Legend
+                  layout="horizontal"
+                  verticalAlign="bottom"
+                  align="center"
+                  iconType="circle"
+                  iconSize={8}
+                  formatter={(v) => <span style={{ fontSize: 11, color: '#3e7630' }}>{v}</span>}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          )}
+        </SectionCard>
+
+        <PlantHarvestSummary data={barData} year={year} hoveredPlant={hoveredPlant} />
+      </div>
 
       {/* ── Chart 2: Year-over-year line ────────────────────────────────── */}
       <SectionCard
@@ -353,9 +351,6 @@ export default function Analytics() {
           </ResponsiveContainer>
         )}
       </SectionCard>
-
-      {/* ── Plant harvest summary table ─────────────────────────────────── */}
-      <PlantHarvestSummary data={barData} year={year} />
 
       {/* ── Chart 5: Weekly area ────────────────────────────────────────── */}
       <SectionCard

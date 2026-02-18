@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import api from '../lib/api';
 import { useAuth } from '../context/AuthContext';
-import { Rows3, ChevronRight, TrendingUp, Plus } from 'lucide-react';
+import { Rows3, Leaf, ChevronRight, TrendingUp, Plus } from 'lucide-react';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
@@ -146,9 +146,10 @@ export default function Dashboard() {
       </div>
 
       {/* Stats row */}
-      <div className="grid sm:grid-cols-2 gap-4 mb-8">
-        <StatCard icon={Rows3}      label="Garden beds"     value={beds.length}                        link="/map" />
-        <StatCard icon={TrendingUp} label="Total harvested" value={`${Math.round(totalOz / 16)} lbs`} link="/harvests" sublabel="last 12 months" />
+      <div className="grid sm:grid-cols-3 gap-4 mb-8">
+        <StatCard icon={Rows3}      label="Garden beds"          value={beds.length}                             link="/map" />
+        <StatCard icon={Leaf}       label="Plant types harvested" value={plantCards.length}                      link="/harvests" sublabel="last 12 months" />
+        <StatCard icon={TrendingUp} label="Total harvested"       value={`${Math.round(totalOz / 16)} lbs`}      link="/harvests" sublabel="last 12 months" />
       </div>
 
       {/* Charts */}
