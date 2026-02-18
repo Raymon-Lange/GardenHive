@@ -4,12 +4,17 @@ const requireAuth = require('../middleware/auth');
 
 const router = express.Router();
 
-// GET /api/harvests/totals — cumulative by plant per season
+// GET /api/harvests/totals — cumulative by plant, supports ?from=&to= date range
 router.get('/totals', requireAuth, async (req, res) => {
   try {
-    const { season } = req.query;
+    const { season, from, to } = req.query;
     const match = { userId: require('mongoose').Types.ObjectId.createFromHexString(req.userId) };
     if (season) match.season = season;
+    if (from || to) {
+      match.harvestedAt = {};
+      if (from) match.harvestedAt.$gte = new Date(from);
+      if (to)   match.harvestedAt.$lte = new Date(to);
+    }
 
     const totals = await Harvest.aggregate([
       { $match: match },
@@ -65,36 +70,44 @@ router.get('/years', requireAuth, async (req, res) => {
   }
 });
 
-// GET /api/harvests/monthly?year=2025 — oz totals per month for the year
+// GET /api/harvests/monthly — rolling 12 months oz totals (today - 12 months → today)
 router.get('/monthly', requireAuth, async (req, res) => {
   try {
-    const year = parseInt(req.query.year) || new Date().getFullYear();
+    const now = new Date();
+    const from = new Date(now);
+    from.setMonth(from.getMonth() - 11);
+    from.setDate(1);
+    from.setHours(0, 0, 0, 0);
+
     const match = {
       userId: require('mongoose').Types.ObjectId.createFromHexString(req.userId),
-      harvestedAt: {
-        $gte: new Date(`${year}-01-01`),
-        $lte: new Date(`${year}-12-31T23:59:59`),
-      },
+      harvestedAt: { $gte: from, $lte: now },
     };
 
     const monthly = await Harvest.aggregate([
       { $match: match },
       {
         $group: {
-          _id: { month: { $month: '$harvestedAt' } },
+          _id: { year: { $year: '$harvestedAt' }, month: { $month: '$harvestedAt' } },
           totalOz: { $sum: '$quantity' },
           entries: { $sum: 1 },
         },
       },
-      { $sort: { '_id.month': 1 } },
+      { $sort: { '_id.year': 1, '_id.month': 1 } },
     ]);
 
-    // Fill all 12 months (so the line graph has a complete x-axis)
-    const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    const result = MONTHS.map((name, i) => {
-      const found = monthly.find((m) => m._id.month === i + 1);
-      return { month: name, totalOz: found ? Math.round(found.totalOz) : 0, entries: found?.entries || 0 };
-    });
+    // Build ordered 12-month labels (e.g. "Mar 25", "Apr 25", ... "Feb 26")
+    const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const result = [];
+    for (let i = 0; i < 12; i++) {
+      const d = new Date(from);
+      d.setMonth(from.getMonth() + i);
+      const y = d.getFullYear();
+      const m = d.getMonth() + 1;
+      const label = `${MONTH_NAMES[m - 1]} ${String(y).slice(2)}`;
+      const found = monthly.find((r) => r._id.year === y && r._id.month === m);
+      result.push({ month: label, totalOz: found ? Math.round(found.totalOz) : 0, entries: found?.entries || 0 });
+    }
 
     res.json(result);
   } catch (err) {
