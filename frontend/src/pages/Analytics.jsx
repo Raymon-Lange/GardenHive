@@ -5,6 +5,7 @@ import {
   LineChart, Line,
   PieChart, Pie,
   AreaChart, Area,
+  ComposedChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell,
 } from 'recharts';
 
@@ -154,6 +155,25 @@ export default function Analytics() {
     value: unit === 'lbs' ? ozToLbs(w.oz) : w.count,
   }));
 
+  // ── Chart 4: Candlestick range (low / median / high across all years) ────
+  const candleData = useMemo(() => {
+    if (!yoy.data.length || !yoy.years.length) return [];
+    const key      = (yr) => unit === 'lbs' ? `${yr}_oz` : `${yr}_count`;
+    const toDisp   = (raw) => unit === 'lbs' ? ozToLbs(raw) : raw;
+    return yoy.data.map((row) => {
+      const vals = yoy.years.map((yr) => row[key(yr)] ?? 0).filter((v) => v > 0);
+      if (!vals.length) return { month: row.month, low: 0, range: 0, median: null, high: 0, hasData: false };
+      const sorted = [...vals].sort((a, b) => a - b);
+      const low    = toDisp(sorted[0]);
+      const high   = toDisp(sorted[sorted.length - 1]);
+      const mid    = Math.floor(sorted.length / 2);
+      const medRaw = sorted.length % 2 === 0
+        ? (sorted[mid - 1] + sorted[mid]) / 2
+        : sorted[mid];
+      return { month: row.month, low, range: high - low, median: toDisp(medRaw), high, hasData: true };
+    });
+  }, [yoy, unit]);
+
   const selectedPlant = plants.find((p) => p._id === selectedPlantId);
 
   return (
@@ -277,7 +297,49 @@ export default function Analytics() {
         )}
       </SectionCard>
 
-      {/* ── Chart 3: Weekly area ────────────────────────────────────────── */}
+      {/* ── Chart 3: Candlestick range ──────────────────────────────────── */}
+      <SectionCard
+        title="Year-over-year range"
+        subtitle={`${selectedPlant ? `${selectedPlant.emoji} ${selectedPlant.name} · ` : ''}lowest and highest year per month, with median highlighted`}
+      >
+        {candleData.every((d) => !d.hasData) ? <EmptyChart /> : (
+          <ResponsiveContainer width="100%" height={260}>
+            <ComposedChart data={candleData} margin={{ top: 4, right: 16, left: -10, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke={GRID_COLOR} />
+              <XAxis dataKey="month" tick={TICK_STYLE} />
+              <YAxis tick={TICK_STYLE} />
+              <Tooltip
+                contentStyle={CHART_STYLE}
+                content={({ active, payload, label }) => {
+                  if (!active || !payload?.length) return null;
+                  const d = candleData.find((r) => r.month === label);
+                  if (!d?.hasData) return null;
+                  const u = unit === 'lbs' ? 'lbs' : 'logs';
+                  return (
+                    <div style={{ ...CHART_STYLE, padding: '8px 12px', background: '#fff' }}>
+                      <p style={{ fontWeight: 600, color: '#3e7630', marginBottom: 6 }}>{label}</p>
+                      <p style={{ color: '#d97706', marginBottom: 2 }}>High: {d.high} {u}</p>
+                      <p style={{ color: '#fbbf24', marginBottom: 2 }}>Median: {d.median} {u}</p>
+                      <p style={{ color: '#a97849' }}>Low: {d.low} {u}</p>
+                    </div>
+                  );
+                }}
+              />
+              {/* Transparent spacer lifts the range bar up to start at `low` */}
+              <Bar dataKey="low"   stackId="candle" fill="transparent" legendType="none" isAnimationActive={false} />
+              <Bar dataKey="range" stackId="candle" name="Low → High range" fill="#74b060" fillOpacity={0.45}
+                   radius={[4, 4, 0, 0]} isAnimationActive={false} />
+              <Line type="monotone" dataKey="median" name="Median" connectNulls={false}
+                    stroke="#fbbf24" strokeWidth={2.5}
+                    dot={{ r: 3, fill: '#fbbf24', stroke: '#d97706', strokeWidth: 1 }}
+                    activeDot={{ r: 5 }} />
+              <Legend formatter={(v) => <span style={{ fontSize: 12, color: '#3e7630' }}>{v}</span>} />
+            </ComposedChart>
+          </ResponsiveContainer>
+        )}
+      </SectionCard>
+
+      {/* ── Chart 5: Weekly area ────────────────────────────────────────── */}
       <SectionCard
         title="Weekly harvest volume"
         subtitle={`${year} · week by week${selectedPlant ? ` · ${selectedPlant.emoji} ${selectedPlant.name}` : ' · all plants'}`}
