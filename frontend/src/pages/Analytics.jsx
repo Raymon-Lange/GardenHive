@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '../lib/api';
 import { Leaf } from 'lucide-react';
+import PlantHarvestSummary from '../components/PlantHarvestSummary';
 import {
   LineChart, Line,
   PieChart, Pie,
@@ -352,6 +353,9 @@ export default function Analytics() {
           </ResponsiveContainer>
         )}
       </SectionCard>
+
+      {/* ── Plant harvest summary table ─────────────────────────────────── */}
+      <PlantHarvestSummary data={barData} year={year} />
 
       {/* ── Chart 5: Weekly area ────────────────────────────────────────── */}
       <SectionCard
