@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Leaf, Grid3X3, BarChart3, ChevronRight } from 'lucide-react';
+import { Leaf, Grid3X3, BarChart3, ChevronRight, Map, TrendingUp, Activity } from 'lucide-react';
 
 const features = [
   {
@@ -15,8 +15,23 @@ const features = [
   },
   {
     icon: BarChart3,
-    title: 'See what you grew',
+    title: 'Season totals',
     desc: 'Cumulative totals by plant and season give you a clear picture of your garden\'s output.',
+  },
+  {
+    icon: Map,
+    title: 'Garden map',
+    desc: 'See all your beds positioned to scale in a live bird\'s-eye map. Click any bed to jump straight to its planting grid.',
+  },
+  {
+    icon: TrendingUp,
+    title: 'Year-over-year trends',
+    desc: 'Compare monthly harvests across every season with a multi-year line chart — spot your best years at a glance.',
+  },
+  {
+    icon: Activity,
+    title: 'Range & rhythm',
+    desc: 'A candlestick range chart shows your lowest, median, and highest yield per month. Weekly volume reveals your harvest rhythm.',
   },
 ];
 
@@ -57,7 +72,7 @@ export default function Landing() {
 
       {/* Features */}
       <section className="max-w-4xl mx-auto px-8 pb-24">
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {features.map(({ icon: Icon, title, desc }) => (
             <div key={title} className="card p-6">
               <div className="w-10 h-10 bg-garden-100 rounded-lg flex items-center justify-center mb-4">
