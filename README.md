@@ -4,7 +4,7 @@ Square foot garden planning & harvest tracking — MERN stack.
 
 ## Stack
 
-- **Frontend** — React 19 + Vite 7 + Tailwind CSS 3
+- **Frontend** — React 19 + Vite 7 + Tailwind CSS 3 + Recharts
 - **Backend** — Node.js + Express 5
 - **Database** — MongoDB (local or Docker)
 - **Auth** — JWT + bcrypt
@@ -25,7 +25,7 @@ Or install MongoDB locally and start `mongod`.
 cd backend
 cp .env.example .env   # edit JWT_SECRET if desired
 npm install
-npm run seed           # seeds 30-plant library (run once)
+npm run seed           # seeds plant library, demo user, beds & harvests (run once)
 npm run dev            # starts on http://localhost:5000
 ```
 
@@ -48,11 +48,12 @@ GardenHive/
 │       ├── models/      User, GardenBed, Plant, Harvest
 │       ├── routes/      auth, beds, plants, harvests
 │       ├── middleware/  JWT auth
-│       └── seed/        plant library (30 plants)
+│       └── seed/        plant library, demo user, beds & harvests
 └── frontend/
     └── src/
-        ├── pages/       Landing, Login, Signup, Dashboard, GardenBeds, BedDetail, Harvests
-        ├── components/  AppLayout, ProtectedRoute
+        ├── pages/       Landing, Login, Signup, Dashboard, GardenBeds,
+        │                BedDetail, GardenMap, Harvests, Analytics
+        ├── components/  AppLayout, ProtectedRoute, PlantHarvestSummary
         ├── context/     AuthContext
         └── lib/         axios API client
 ```
@@ -67,10 +68,15 @@ GardenHive/
 | GET | `/api/beds` | ✓ | List user's beds |
 | POST | `/api/beds` | ✓ | Create a bed |
 | GET | `/api/beds/:id` | ✓ | Get bed with cells |
+| PUT | `/api/beds/:id` | ✓ | Rename a bed |
 | PUT | `/api/beds/:id/cells` | ✓ | Set a cell's plant |
 | DELETE | `/api/beds/:id` | ✓ | Delete a bed |
 | GET | `/api/plants` | ✓ | Plant library |
 | GET | `/api/harvests` | ✓ | Recent harvests |
-| GET | `/api/harvests/totals` | ✓ | Totals by plant+season |
+| GET | `/api/harvests/totals` | ✓ | Totals by plant+season (supports `?from=&to=`) |
+| GET | `/api/harvests/yoy` | ✓ | Monthly totals grouped by year (line chart) |
+| GET | `/api/harvests/weekly` | ✓ | Week-by-week totals for a year |
+| GET | `/api/harvests/years` | ✓ | Distinct years with harvest data |
+| GET | `/api/harvests/monthly` | ✓ | Rolling 12-month oz totals |
 | POST | `/api/harvests` | ✓ | Log a harvest |
 | DELETE | `/api/harvests/:id` | ✓ | Delete a harvest entry |
