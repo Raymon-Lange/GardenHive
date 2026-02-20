@@ -209,6 +209,7 @@ export default function Harvests() {
                   <th className="text-left px-4 py-3 font-medium text-garden-600">Bed</th>
                   <th className="text-left px-4 py-3 font-medium text-garden-600">Date</th>
                   <th className="text-left px-4 py-3 font-medium text-garden-600">Season</th>
+                  <th className="text-left px-4 py-3 font-medium text-garden-600">Logged by</th>
                   <th className="px-4 py-3" />
                 </tr>
               </thead>
@@ -229,6 +230,7 @@ export default function Harvests() {
                       {new Date(h.harvestedAt).toLocaleDateString()}
                     </td>
                     <td className="px-4 py-3 text-garden-500">{h.season}</td>
+                    <td className="px-4 py-3 text-garden-500">{h.loggedById?.name || '—'}</td>
                     <td className="px-4 py-3 text-right">
                       <button
                         className="btn-danger"

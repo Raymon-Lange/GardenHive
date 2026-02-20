@@ -52,6 +52,7 @@ async function seedHarvests({ force = false } = {}) {
       if (!plantId) { console.warn(`  ⚠  Plant not in DB: "${r.plantName}"`); continue; }
       await Harvest.create({
         userId: user._id,
+        loggedById: user._id,
         plantId,
         quantity: r.quantity,
         unit: r.unit,

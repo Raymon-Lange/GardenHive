@@ -11,6 +11,7 @@ const harvestSchema = new mongoose.Schema(
       enum: ['lbs', 'oz', 'kg', 'g', 'count'],
       required: true,
     },
+    loggedById: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
     harvestedAt: { type: Date, default: Date.now },
     season: { type: String }, // e.g. "Spring 2026", derived from harvestedAt
     notes: { type: String, trim: true },

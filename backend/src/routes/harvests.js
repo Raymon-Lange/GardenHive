@@ -199,6 +199,7 @@ router.get('/', requireAccess('analytics'), async (req, res) => {
     const harvests = await Harvest.find(filter)
       .populate('plantId', 'name emoji category')
       .populate('bedId', 'name')
+      .populate('loggedById', 'name')
       .sort({ harvestedAt: -1 })
       .limit(Number(limit));
     res.json(harvests);
@@ -216,6 +217,7 @@ router.post('/', requireAccess('harvests_analytics'), async (req, res) => {
     }
     const harvest = await Harvest.create({
       userId: req.gardenOwnerId,
+      loggedById: req.userId,
       plantId,
       bedId: bedId || null,
       quantity: Number(quantity),
@@ -225,6 +227,7 @@ router.post('/', requireAccess('harvests_analytics'), async (req, res) => {
     });
     await harvest.populate('plantId', 'name emoji category');
     await harvest.populate('bedId', 'name');
+    await harvest.populate('loggedById', 'name');
     res.status(201).json(harvest);
   } catch (err) {
     res.status(500).json({ error: err.message });
