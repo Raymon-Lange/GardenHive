@@ -8,7 +8,8 @@
     "seed": "node src/seed/plants.js",
     "seed:user": "node src/seed/user.js",
     "seed:beds": "node src/seed/beds.js",
-    "seed:harvests": "node src/seed/harvests.js"
+    "seed:harvests": "node src/seed/harvests.js",
+    "seed:all": "node src/seed/index.js"
   },
   "keywords": [],
   "author": "",

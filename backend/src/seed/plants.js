@@ -1,5 +1,3 @@
-require('dotenv').config({ path: require('path').join(__dirname, '../../.env') });
-const mongoose = require('mongoose');
 const Plant = require('../models/Plant');
 
 const PLANTS = [
@@ -36,18 +34,27 @@ const PLANTS = [
   { name: 'Cilantro', category: 'herb', perSqFt: 4, daysToHarvest: 45, emoji: '🌿', description: 'Bolt in heat. Succession plant every 2-3 weeks.' },
   { name: 'Chives', category: 'herb', perSqFt: 16, daysToHarvest: 30, emoji: '🌿', description: 'Perennial. Cut often to encourage growth.' },
   { name: 'Dill', category: 'herb', perSqFt: 4, daysToHarvest: 40, emoji: '🌿', description: 'Attracts beneficial insects. Harvest fronds or seeds.' },
+  // Extra plants (from harvest history)
+  { name: 'Jalapeño',        category: 'vegetable', perSqFt: 1, daysToHarvest: 75,  emoji: '🌶️', description: 'Medium heat pepper.' },
+  { name: 'Cayenne',         category: 'vegetable', perSqFt: 1, daysToHarvest: 80,  emoji: '🌶️', description: 'Thin hot pepper, fresh or dried.' },
+  { name: 'Shishito Pepper', category: 'vegetable', perSqFt: 1, daysToHarvest: 60,  emoji: '🫑', description: 'Mild Japanese pepper.' },
+  { name: 'Tomatillo',       category: 'vegetable', perSqFt: 1, daysToHarvest: 75,  emoji: '🟢', description: 'Husk tomato for salsa verde.' },
+  { name: 'Okra',            category: 'vegetable', perSqFt: 1, daysToHarvest: 55,  emoji: '🌿', description: 'Harvest pods every 2–3 days.' },
+  { name: 'Yellow Squash',   category: 'vegetable', perSqFt: 1, daysToHarvest: 50,  emoji: '🟡', description: 'Summer squash. Harvest young.' },
+  { name: 'Butternut Squash',category: 'vegetable', perSqFt: 1, daysToHarvest: 110, emoji: '🎃', description: 'Winter squash. Cure after harvest.' },
+  { name: 'Pumpkin',         category: 'vegetable', perSqFt: 1, daysToHarvest: 100, emoji: '🎃', description: 'Needs space to vine out.' },
+  { name: 'Banana Pepper',   category: 'vegetable', perSqFt: 1, daysToHarvest: 70,  emoji: '🫑', description: 'Mild, tangy sweet pepper.' },
+  { name: 'Hatch Pepper',    category: 'vegetable', perSqFt: 1, daysToHarvest: 80,  emoji: '🌶️', description: 'New Mexico green chile. Seasonal.' },
+  { name: 'Tabasco Pepper',  category: 'vegetable', perSqFt: 1, daysToHarvest: 80,  emoji: '🌶️', description: 'Small, very hot pepper.' },
+  { name: 'Turnip',          category: 'vegetable', perSqFt: 9, daysToHarvest: 50,  emoji: '🟣', description: 'Root vegetable. 9 per sq ft.' },
+  { name: 'Ginger',          category: 'herb',      perSqFt: 1, daysToHarvest: 240, emoji: '🫚', description: 'Tropical rhizome. Harvest in fall.' },
 ];
 
-async function seed() {
-  await mongoose.connect(process.env.MONGO_URI);
-  console.log('Connected to MongoDB');
-
+async function seedPlants({ force = false } = {}) {
   const existing = await Plant.countDocuments();
   if (existing > 0) {
-    console.log(`Plant library already has ${existing} plants. Skipping seed.`);
-    console.log('Run with --force to re-seed: node src/seed/plants.js --force');
-    if (!process.argv.includes('--force')) {
-      await mongoose.disconnect();
+    if (!force) {
+      console.log(`Plant library already has ${existing} plants. Skipping.`);
       return;
     }
     await Plant.deleteMany({});
@@ -56,10 +63,16 @@ async function seed() {
 
   await Plant.insertMany(PLANTS);
   console.log(`Seeded ${PLANTS.length} plants to the library.`);
-  await mongoose.disconnect();
 }
 
-seed().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+module.exports = { seedPlants };
+
+// ── Standalone entrypoint ─────────────────────────────────────────────────────
+if (require.main === module) {
+  require('dotenv').config({ path: require('path').join(__dirname, '../../.env') });
+  const mongoose = require('mongoose');
+  mongoose.connect(process.env.MONGO_URI)
+    .then(() => seedPlants({ force: process.argv.includes('--force') }))
+    .then(() => mongoose.disconnect())
+    .catch((err) => { console.error(err); process.exit(1); });
+}

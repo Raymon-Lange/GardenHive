@@ -1,11 +1,9 @@
-require('dotenv').config({ path: require('path').join(__dirname, '../../.env') });
 const fs = require('fs');
 const path = require('path');
-const mongoose = require('mongoose');
 const User = require('../models/User');
 const GardenBed = require('../models/GardenBed');
 
-const CSV_PATH = path.join(require('os').homedir(), 'Downloads', 'layout.csv');
+const CSV_PATH = path.join(__dirname, 'data', 'layout.csv');
 
 const BED_NAMES = {
   1:  'Bed 1 — South East',
@@ -50,23 +48,14 @@ function parseLayout(csvPath) {
     }));
 }
 
-async function seed() {
-  await mongoose.connect(process.env.MONGO_URI);
-  console.log('Connected to MongoDB');
-
+async function seedBeds({ force = false } = {}) {
   const user = await User.findOne({ email: 'mike@gardenhive.com' });
-  if (!user) {
-    console.error('Default user not found. Run: npm run seed:user first.');
-    await mongoose.disconnect();
-    process.exit(1);
-  }
+  if (!user) throw new Error('Default user not found. Run seedUser first.');
 
   const existing = await GardenBed.countDocuments({ userId: user._id });
   if (existing > 0) {
-    console.log(`Mike already has ${existing} beds. Skipping.`);
-    console.log('Run with --force to re-seed: node src/seed/beds.js --force');
-    if (!process.argv.includes('--force')) {
-      await mongoose.disconnect();
+    if (!force) {
+      console.log(`${user.name} already has ${existing} beds. Skipping.`);
       return;
     }
     await GardenBed.deleteMany({ userId: user._id });
@@ -74,7 +63,6 @@ async function seed() {
   }
 
   const bedDefs = parseLayout(CSV_PATH);
-
   for (const bed of bedDefs) {
     await GardenBed.create({
       userId: user._id,
@@ -88,11 +76,17 @@ async function seed() {
     console.log(`  Created: ${bed.name} (${bed.rows}×${bed.cols}) @ map [${bed.mapRow},${bed.mapCol}]`);
   }
 
-  console.log(`\nSeeded ${bedDefs.length} beds for ${user.name}.`);
-  await mongoose.disconnect();
+  console.log(`Seeded ${bedDefs.length} beds for ${user.name}.`);
 }
 
-seed().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+module.exports = { seedBeds };
+
+// ── Standalone entrypoint ─────────────────────────────────────────────────────
+if (require.main === module) {
+  require('dotenv').config({ path: require('path').join(__dirname, '../../.env') });
+  const mongoose = require('mongoose');
+  mongoose.connect(process.env.MONGO_URI)
+    .then(() => seedBeds({ force: process.argv.includes('--force') }))
+    .then(() => mongoose.disconnect())
+    .catch((err) => { console.error(err); process.exit(1); });
+}

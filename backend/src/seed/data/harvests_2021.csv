@@ -1,0 +1,177 @@
+date,plant,quantity,unit
+2021-05-06,Potato,136,oz
+2021-05-09,Banana Pepper,8,oz
+2021-05-10,Yellow Squash,10,oz
+2021-05-10,Shishito Pepper,4,oz
+2021-05-11,Shishito Pepper,4,oz
+2021-05-12,Shishito Pepper,10,oz
+2021-05-13,Yellow Squash,15,oz
+2021-05-15,Tomato (Cherry),4,oz
+2021-05-15,Cayenne,5,oz
+2021-05-15,Shishito Pepper,7,oz
+2021-05-16,Yellow Squash,22,oz
+2021-05-16,Banana Pepper,14,oz
+2021-05-16,Bell Pepper,14,oz
+2021-05-18,Cucumber,8,oz
+2021-05-18,Zucchini,17,oz
+2021-05-19,Yellow Squash,51,oz
+2021-05-19,Shishito Pepper,7,oz
+2021-05-19,Tomato (Cherry),6,oz
+2021-05-21,Tomato (Cherry),4,oz
+2021-05-21,Cucumber,17,oz
+2021-05-21,Zucchini,11,oz
+2021-05-21,Yellow Squash,8,oz
+2021-05-21,Green Bean (Bush),11,oz
+2021-05-21,Banana Pepper,4,oz
+2021-05-23,Turnip,17,oz
+2021-05-23,Green Bean (Bush),10,oz
+2021-05-23,Shishito Pepper,6,oz
+2021-05-23,Tomato (Large),6,oz
+2021-05-23,Tomato (Cherry),4,oz
+2021-05-23,Zucchini,34,oz
+2021-05-24,Green Bean (Bush),6,oz
+2021-05-24,Yellow Squash,10,oz
+2021-05-24,Banana Pepper,2,oz
+2021-05-24,Shishito Pepper,6,oz
+2021-05-24,Green Bean (Bush),13,oz
+2021-05-25,Cucumber,154,oz
+2021-05-25,Beet,9,oz
+2021-05-25,Tomato (Large),7,oz
+2021-05-26,Cucumber,39,oz
+2021-05-28,Bell Pepper,5,oz
+2021-05-28,Shishito Pepper,40,oz
+2021-05-28,Green Bean (Bush),97,oz
+2021-05-28,Tomato (Cherry),10,oz
+2021-05-28,Tomato (Large),12,oz
+2021-05-30,Cucumber,66,oz
+2021-05-30,Shishito Pepper,5,oz
+2021-05-30,Yellow Squash,7,oz
+2021-05-30,Zucchini,6,oz
+2021-05-30,Tomato (Cherry),6,oz
+2021-05-30,Banana Pepper,4,oz
+2021-05-31,Tomato (Cherry),6,oz
+2021-05-31,Tomato (Large),17,oz
+2021-06-01,Tomato (Large),32,oz
+2021-06-01,Cucumber,94,oz
+2021-06-02,Shishito Pepper,22,oz
+2021-06-02,Banana Pepper,22,oz
+2021-06-02,Green Bean (Bush),22,oz
+2021-06-04,Tomato (Large),12,oz
+2021-06-04,Cucumber,12,oz
+2021-06-04,Cucumber,56,oz
+2021-06-04,Tomato (Large),50,oz
+2021-06-04,Potato,74,oz
+2021-06-05,Beet,3,oz
+2021-06-05,Butternut Squash,20,oz
+2021-06-05,Jalapeño,8,oz
+2021-06-05,Shishito Pepper,20,oz
+2021-06-05,Green Bean (Bush),7,oz
+2021-06-05,Tomato (Cherry),12,oz
+2021-06-05,Tomato (Large),21,oz
+2021-06-05,Beet,4,oz
+2021-06-05,Turnip,6,oz
+2021-06-05,Banana Pepper,6,oz
+2021-06-06,Tomato (Cherry),12,oz
+2021-06-06,Tomato (Large),13,oz
+2021-06-06,Shishito Pepper,6,oz
+2021-06-07,Tomato (Large),55,oz
+2021-06-07,Tomato (Large),90,oz
+2021-06-07,Cucumber,42,oz
+2021-06-07,Tomato (Cherry),10,oz
+2021-06-08,Shishito Pepper,10,oz
+2021-06-09,Shishito Pepper,10,oz
+2021-06-09,Tomato (Cherry),20,oz
+2021-06-10,Tomato (Cherry),6,oz
+2021-06-10,Green Bean (Bush),6,oz
+2021-06-10,Shishito Pepper,10,oz
+2021-06-11,Green Bean (Bush),34,oz
+2021-06-11,Cucumber,12,oz
+2021-06-11,Banana Pepper,3,oz
+2021-06-11,Tomato (Large),26,oz
+2021-06-11,Tomato (Cherry),18,oz
+2021-06-11,Shishito Pepper,21,oz
+2021-06-11,Beet,6,oz
+2021-06-11,Cayenne,1,oz
+2021-06-13,Tomato (Large),282,oz
+2021-06-13,Tomatillo,7,oz
+2021-06-13,Cayenne,13,oz
+2021-06-13,Green Bean (Bush),9,oz
+2021-06-13,Banana Pepper,21,oz
+2021-06-13,Cucumber,139,oz
+2021-06-13,Butternut Squash,26,oz
+2021-06-13,Tomato (Cherry),21,oz
+2021-06-18,Tomato (Large),279,oz
+2021-06-18,Bell Pepper,23,oz
+2021-06-18,Jalapeño,10,oz
+2021-06-18,Tomatillo,8,oz
+2021-06-18,Carrot,4,oz
+2021-06-19,Tomatillo,34,oz
+2021-06-19,Tomato (Cherry),37,oz
+2021-06-19,Shishito Pepper,17,oz
+2021-06-19,Green Bean (Bush),8,oz
+2021-06-19,Bell Pepper,3,oz
+2021-06-20,Tomato (Large),193,oz
+2021-06-20,Cucumber,199,oz
+2021-06-20,Green Bean (Bush),6,oz
+2021-06-20,Beet,7,oz
+2021-06-22,Tomatillo,4,oz
+2021-06-22,Tomato (Cherry),46,oz
+2021-06-22,Beet,5,oz
+2021-06-22,Shishito Pepper,12,oz
+2021-06-23,Bell Pepper,26,oz
+2021-06-25,Tomato (Large),174,oz
+2021-06-26,Green Bean (Bush),6,oz
+2021-06-26,Shishito Pepper,8,oz
+2021-06-26,Tomato (Cherry),8,oz
+2021-06-27,Tomatillo,70,oz
+2021-07-02,Tomato (Cherry),72,oz
+2021-07-02,Cucumber,129,oz
+2021-07-02,Tomato (Large),57,oz
+2021-07-02,Green Bean (Bush),55,oz
+2021-07-02,Jalapeño,24,oz
+2021-07-02,Tomatillo,35,oz
+2021-07-02,Shishito Pepper,16,oz
+2021-07-02,Beet,14,oz
+2021-07-02,Cayenne,14,oz
+2021-07-06,Bell Pepper,25,oz
+2021-07-06,Tomato (Cherry),35,oz
+2021-07-11,Bell Pepper,5,oz
+2021-07-12,Shishito Pepper,36,oz
+2021-07-12,Beet,14,oz
+2021-07-12,Turnip,5,oz
+2021-07-12,Carrot,6,oz
+2021-07-13,Garlic,6,oz
+2021-07-15,Green Bean (Bush),80,oz
+2021-07-15,Bell Pepper,45,oz
+2021-07-15,Banana Pepper,6,oz
+2021-07-15,Tomato (Cherry),26,oz
+2021-07-15,Shishito Pepper,6,oz
+2021-07-16,Onion,24,oz
+2021-07-26,Watermelon,102,oz
+2021-08-01,Watermelon,250,oz
+2021-08-01,Carrot,10,oz
+2021-08-16,Watermelon,257,oz
+2021-10-05,Tabasco Pepper,49,oz
+2021-09-28,Carrot,48,oz
+2021-09-16,Bell Pepper,36,oz
+2021-10-28,Bell Pepper,13,oz
+2021-11-04,Bell Pepper,13,oz
+2021-11-07,Bell Pepper,10,oz
+2021-10-15,Watermelon,138,oz
+2021-11-17,Bell Pepper,14,oz
+2021-11-17,Tomato (Cherry),6,oz
+2021-11-17,Shishito Pepper,3,oz
+2021-11-03,Tomato (Large),50,oz
+2021-11-25,Ginger,8,oz
+2022-12-30,Bell Pepper,11,oz
+2022-12-30,Tomato (Large),21,oz
+2022-12-30,Tomato (Cherry),5,oz
+2022-12-18,Bell Pepper,12,oz
+2022-12-05,Tomato (Cherry),3,oz
+2022-12-05,Ginger,3,oz
+2022-12-05,Swiss Chard,22,oz
+2022-12-18,Swiss Chard,11,oz
+2022-01-05,Ginger,45,oz
+2022-01-05,Green Bean (Bush),14,oz
+2022-01-05,Bell Pepper,6,oz
+2022-01-05,Tabasco Pepper,36,oz

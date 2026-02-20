@@ -1,0 +1,165 @@
+date,plant,quantity,unit
+2022-03-20,Lettuce,10,oz
+2022-03-23,Lettuce,6,oz
+2022-03-25,Lettuce,5,oz
+2022-03-25,Cauliflower,3,oz
+2022-03-25,Swiss Chard,23,oz
+2022-04-04,Lettuce,5,oz
+2022-04-06,Lettuce,6,oz
+2022-04-10,Swiss Chard,8,oz
+2022-04-12,Lettuce,6,oz
+2022-04-13,Lettuce,7,oz
+2022-04-13,Beet,8,oz
+2022-04-16,Swiss Chard,25,oz
+2022-04-18,Lettuce,10,oz
+2022-04-20,Beet,8,oz
+2022-04-20,Lettuce,8,oz
+2022-04-20,Swiss Chard,15,oz
+2022-04-28,Swiss Chard,11,oz
+2022-05-12,Jalapeño,2,oz
+2022-05-12,Banana Pepper,3,oz
+2022-05-12,Cucumber,8,oz
+2022-05-13,Potato,10,oz
+2022-05-16,Bell Pepper,3,oz
+2022-05-16,Banana Pepper,3,oz
+2022-05-16,Potato,51,oz
+2022-05-16,Green Bean (Bush),9,oz
+2022-05-06,Potato,7,oz
+2022-05-19,Green Bean (Bush),20,oz
+2022-05-20,Cucumber,51,oz
+2022-05-23,Cucumber,40,oz
+2022-05-23,Swiss Chard,15,oz
+2022-05-25,Tomato (Cherry),6,oz
+2022-05-25,Tomato (Large),3,oz
+2022-05-25,Green Bean (Bush),13,oz
+2022-05-25,Strawberry,13,oz
+2022-05-25,Potato,172,oz
+2022-05-22,Bell Pepper,12,oz
+2022-05-22,Banana Pepper,8,oz
+2022-05-22,Cucumber,62.4,oz
+2022-05-22,Strawberry,2,oz
+2022-05-26,Tomato (Large),3,oz
+2022-05-27,Tomato (Large),6,oz
+2022-05-27,Bell Pepper,3,oz
+2022-05-27,Banana Pepper,4,oz
+2022-05-27,Jalapeño,3,oz
+2022-05-27,Tomato (Cherry),3,oz
+2022-05-27,Tomato (Large),2,oz
+2022-05-29,Swiss Chard,38,oz
+2022-05-29,Cayenne,2,oz
+2022-05-29,Green Bean (Bush),21,oz
+2022-05-29,Bell Pepper,22,oz
+2022-05-29,Tomato (Cherry),10,oz
+2022-05-29,Jalapeño,8,oz
+2022-05-29,Tomato (Large),5,oz
+2022-05-29,Banana Pepper,2,oz
+2022-05-29,Cucumber,128,oz
+2022-05-29,Tomato (Large),10,oz
+2022-05-31,Tomato (Large),7,oz
+2022-05-31,Tomato (Large),7,oz
+2022-05-31,Green Bean (Bush),18,oz
+2022-06-01,Tomato (Cherry),13,oz
+2022-06-01,Cucumber,27,oz
+2022-06-01,Bell Pepper,10,oz
+2022-06-01,Cucumber,21,oz
+2022-06-01,Zucchini,8,oz
+2022-06-01,Banana Pepper,4,oz
+2022-06-01,Green Bean (Bush),8,oz
+2022-06-03,Tomato (Cherry),6,oz
+2022-06-03,Cucumber,21,oz
+2022-06-03,Tomato (Large),42,oz
+2022-06-03,Bell Pepper,9,oz
+2022-06-03,Tomato (Large),44,oz
+2022-06-03,Green Bean (Bush),6,oz
+2022-06-04,Tomato (Large),14,oz
+2022-06-04,Tomato (Cherry),6,oz
+2022-06-05,Tomato (Large),4,oz
+2022-06-05,Tomato (Cherry),3,oz
+2022-06-06,Cucumber,20,oz
+2022-06-06,Tomato (Large),73,oz
+2022-06-07,Hatch Pepper,4,oz
+2022-06-07,Bell Pepper,6,oz
+2022-06-07,Jalapeño,1,oz
+2022-06-07,Banana Pepper,1,oz
+2022-06-08,Tomato (Cherry),7,oz
+2022-06-08,Bell Pepper,4,oz
+2022-06-08,Hatch Pepper,23,oz
+2022-06-09,Cucumber,39,oz
+2022-06-09,Tomato (Large),23,oz
+2022-06-10,Tomato (Large),3,oz
+2022-06-10,Tomato (Cherry),21,oz
+2022-06-10,Tomato (Large),43,oz
+2022-06-10,Banana Pepper,16,oz
+2022-06-10,Jalapeño,1,oz
+2022-06-10,Hatch Pepper,37,oz
+2022-06-10,Bell Pepper,13,oz
+2022-06-10,Green Bean (Bush),6,oz
+2022-06-11,Tomato (Large),5,oz
+2022-06-12,Jalapeño,10,oz
+2022-06-12,Tomato (Cherry),4,oz
+2022-06-13,Cucumber,54,oz
+2022-06-13,Tomato (Large),209,oz
+2022-06-14,Cantaloupe,42,oz
+2022-06-16,Cantaloupe,29,oz
+2022-06-16,Hatch Pepper,14,oz
+2022-06-16,Jalapeño,10,oz
+2022-06-16,Banana Pepper,4,oz
+2022-06-16,Tomato (Cherry),19,oz
+2022-06-16,Tomato (Large),44,oz
+2022-06-16,Garlic,4,oz
+2022-06-18,Tomato (Large),30,oz
+2022-06-17,Cantaloupe,30,oz
+2022-06-17,Tomato (Cherry),6,oz
+2022-06-17,Tomato (Large),197,oz
+2022-06-17,Cucumber,74,oz
+2022-06-18,Cucumber,26,oz
+2022-06-19,Bell Pepper,4,oz
+2022-06-22,Shishito Pepper,9,oz
+2022-06-22,Jalapeño,4,oz
+2022-06-22,Cayenne,25,oz
+2022-06-22,Tomato (Large),48,oz
+2022-06-22,Tomato (Cherry),15,oz
+2022-06-22,Banana Pepper,4,oz
+2022-06-22,Hatch Pepper,2,oz
+2022-06-22,Bell Pepper,24,oz
+2022-06-22,Onion,2,oz
+2022-06-22,Garlic,5,oz
+2022-06-24,Tomato (Large),5,oz
+2022-06-24,Tomato (Cherry),6,oz
+2022-06-25,Tomato (Cherry),5,oz
+2022-06-26,Shishito Pepper,4,oz
+2022-07-02,Garlic,12,oz
+2022-07-02,Cantaloupe,20,oz
+2022-07-02,Watermelon,88,oz
+2022-07-04,Onion,22,oz
+2022-07-04,Tomato (Large),178,oz
+2022-07-04,Cucumber,22,oz
+2022-07-04,Tomato (Cherry),9,oz
+2022-07-05,Shishito Pepper,4,oz
+2022-07-05,Tomato (Large),6,oz
+2022-07-05,Garlic,1,oz
+2022-07-05,Bell Pepper,6,oz
+2022-07-05,Tomato (Cherry),2,oz
+2022-07-05,Jalapeño,1,oz
+2022-07-05,Bell Pepper,6,oz
+2022-07-07,Watermelon,85,oz
+2022-07-07,Tomato (Cherry),7,oz
+2022-07-07,Bell Pepper,13,oz
+2022-07-07,Tomato (Large),4,oz
+2022-07-08,Tomato (Cherry),14,oz
+2022-07-09,Watermelon,278,oz
+2022-07-09,Bell Pepper,24,oz
+2022-07-09,Shishito Pepper,4,oz
+2022-07-20,Bell Pepper,7,oz
+2022-07-20,Shishito Pepper,3,oz
+2022-07-21,Tomato (Cherry),5,oz
+2022-07-21,Shishito Pepper,6,oz
+2022-07-22,Tomato (Cherry),5,oz
+2022-07-22,Shishito Pepper,6,oz
+2022-07-23,Tomato (Cherry),5,oz
+2022-07-23,Shishito Pepper,6,oz
+2022-07-24,Cantaloupe,55,oz
+2022-07-31,Tomato (Large),13,oz
+2022-07-31,Tomato (Cherry),3,oz
+2022-07-31,Bell Pepper,9,oz
+2022-07-31,Jalapeño,5,oz

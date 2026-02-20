@@ -1,0 +1,134 @@
+date,plant,quantity,unit
+2025-04-15,Radish,6,oz
+2025-04-18,Radish,5,oz
+2025-04-23,Radish,5,oz
+2025-04-16,Radish,8,oz
+2025-04-26,Radish,8,oz
+2025-05-01,Green Bean (Bush),6,oz
+2025-05-13,Green Bean (Bush),6,oz
+2025-05-13,Cucumber,72,oz
+2025-05-13,Radish,1,oz
+2025-05-13,Tomato (Large),9,oz
+2025-05-13,Shishito Pepper,6,oz
+2025-05-15,Bell Pepper,5,oz
+2025-05-15,Green Bean (Bush),36,oz
+2025-05-15,Beet,4,oz
+2025-05-15,Bell Pepper,2,oz
+2025-05-15,Tomato (Large),2,oz
+2025-05-17,Green Bean (Bush),17,oz
+2025-05-17,Cucumber,28,oz
+2025-05-17,Shishito Pepper,8,oz
+2025-05-17,Radish,8,oz
+2025-05-17,Green Bean (Bush),12,oz
+2025-05-19,Tomato (Large),6,oz
+2025-05-20,Tomato (Large),10,oz
+2025-05-20,Cayenne,2,oz
+2025-05-20,Radish,10,oz
+2025-05-20,Green Bean (Bush),19,oz
+2025-05-20,Bell Pepper,4,oz
+2025-05-20,Cucumber,43,oz
+2025-05-20,Jalapeño,8,oz
+2025-05-20,Shishito Pepper,4,oz
+2025-05-20,Beet,36,oz
+2025-05-23,Green Bean (Bush),5,oz
+2025-05-23,Cucumber,34,oz
+2025-05-23,Tomato (Large),10,oz
+2025-05-23,Green Bean (Bush),97,oz
+2025-05-23,Beet,16,oz
+2025-05-23,Radish,2,oz
+2025-05-23,Bell Pepper,1,oz
+2025-05-23,Tomato (Cherry),15,oz
+2025-05-23,Tomato (Large),69,oz
+2025-05-24,Tomato (Large),116,oz
+2025-05-24,Potato,325,oz
+2025-05-25,Tomato (Large),18,oz
+2025-05-25,Jalapeño,2,oz
+2025-05-25,Bell Pepper,2,oz
+2025-05-25,Shishito Pepper,6,oz
+2025-05-26,Cucumber,72,oz
+2025-05-26,Tomato (Large),101,oz
+2025-05-26,Bell Pepper,4,oz
+2025-05-28,Green Bean (Bush),4,oz
+2025-05-28,Cucumber,25,oz
+2025-05-28,Tomato (Large),115,oz
+2025-05-28,Tomato (Large),86,oz
+2025-05-28,Tomato (Cherry),8,oz
+2025-05-28,Bell Pepper,7,oz
+2025-05-30,Shishito Pepper,3,oz
+2025-05-30,Bell Pepper,2,oz
+2025-05-30,Beet,16,oz
+2025-05-30,Radish,9,oz
+2025-05-31,Tomato (Large),100,oz
+2025-05-31,Tomato (Large),78,oz
+2025-05-31,Cucumber,46,oz
+2025-05-31,Tomato (Cherry),16,oz
+2025-05-31,Tomatillo,32,oz
+2025-05-31,Okra,3,oz
+2025-05-31,Bell Pepper,1,oz
+2025-05-31,Cayenne,5,oz
+2025-05-31,Jalapeño,8,oz
+2025-05-31,Onion,5,oz
+2025-05-31,Shishito Pepper,5,oz
+2025-06-02,Cucumber,61,oz
+2025-06-02,Tomato (Large),86,oz
+2025-06-02,Tomato (Cherry),21,oz
+2025-06-02,Bell Pepper,3,oz
+2025-06-02,Shishito Pepper,4,oz
+2025-06-02,Okra,3,oz
+2025-06-06,Onion,3,oz
+2025-06-06,Cucumber,22,oz
+2025-06-06,Tomato (Large),49,oz
+2025-06-06,Tomato (Large),81,oz
+2025-06-06,Tomato (Large),64,oz
+2025-06-06,Tomato (Cherry),11,oz
+2025-06-06,Okra,3,oz
+2025-06-09,Tomatillo,60,oz
+2025-06-09,Tomatillo,28,oz
+2025-06-15,Tomato (Large),29,oz
+2025-06-16,Tomato (Large),122,oz
+2025-06-16,Tomato (Large),65,oz
+2025-06-16,Tomato (Cherry),20,oz
+2025-06-16,Bell Pepper,7,oz
+2025-06-16,Okra,5,oz
+2025-06-16,Bell Pepper,2,oz
+2025-06-16,Jalapeño,2,oz
+2025-06-16,Shishito Pepper,4,oz
+2025-06-16,Cucumber,137,oz
+2025-06-16,Cucumber,89,oz
+2025-06-20,Bell Pepper,6,oz
+2025-06-20,Cucumber,42,oz
+2025-06-20,Tomato (Large),106,oz
+2025-06-20,Tomato (Cherry),23,oz
+2025-06-21,Shishito Pepper,6,oz
+2025-06-22,Green Bean (Bush),6,oz
+2025-06-22,Tomato (Cherry),20,oz
+2025-06-22,Okra,14,oz
+2025-06-22,Onion,5,oz
+2025-06-23,Onion,86,oz
+2025-06-24,Cucumber,9,oz
+2025-06-24,Okra,2,oz
+2025-06-24,Green Bean (Bush),11,oz
+2025-06-24,Shishito Pepper,5,oz
+2025-06-25,Bell Pepper,6,oz
+2025-06-25,Cucumber,5,oz
+2025-06-25,Tomato (Large),82,oz
+2025-06-25,Tomato (Large),33,oz
+2025-06-25,Tomato (Cherry),8,oz
+2025-06-25,Bell Pepper,2,oz
+2025-06-25,Jalapeño,2,oz
+2025-06-28,Okra,2,oz
+2025-06-28,Green Bean (Bush),6,oz
+2025-06-28,Carrot,4,oz
+2025-06-28,Shishito Pepper,3,oz
+2025-06-18,Shishito Pepper,6,oz
+2025-06-18,Tomato (Cherry),10,oz
+2025-06-18,Tomato (Large),12,oz
+2025-06-18,Shishito Pepper,4,oz
+2025-07-04,Bell Pepper,15,oz
+2025-07-04,Jalapeño,2,oz
+2025-07-04,Bell Pepper,2,oz
+2025-07-04,Tomato (Large),26,oz
+2025-07-04,Shishito Pepper,8,oz
+2025-07-04,Green Bean (Bush),16,oz
+2025-07-10,Jalapeño,72,oz
+2025-07-30,Watermelon,519,oz
