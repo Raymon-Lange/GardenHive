@@ -37,10 +37,17 @@ function useYears() {
   });
 }
 
-function usePlants() {
+function useHarvestedPlants() {
   return useQuery({
-    queryKey: ['plants'],
-    queryFn: () => api.get('/plants').then((r) => r.data),
+    queryKey: ['harvests', 'totals', 'harvested-plants'],
+    queryFn: () =>
+      api.get('/harvests/totals').then((r) => {
+        const seen = new Set();
+        return r.data
+          .filter((t) => { if (seen.has(t.plantId)) return false; seen.add(t.plantId); return true; })
+          .map((t) => ({ _id: t.plantId, name: t.plantName, emoji: t.plantEmoji }))
+          .sort((a, b) => a.name.localeCompare(b.name));
+      }),
   });
 }
 
@@ -118,8 +125,8 @@ function EmptyChart() {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function Analytics() {
-  const { data: years = [] }  = useYears();
-  const { data: plants = [] } = usePlants();
+  const { data: years = [] }          = useYears();
+  const { data: harvestedPlants = [] } = useHarvestedPlants();
 
   // Global filters
   const [selectedYear,    setSelectedYear]    = useState(null);
@@ -189,7 +196,7 @@ export default function Analytics() {
     });
   }, [yoy, unit]);
 
-  const selectedPlant = plants.find((p) => p._id === selectedPlantId);
+  const selectedPlant = harvestedPlants.find((p) => p._id === selectedPlantId);
   const yearLabel = year === 'all' ? 'All time' : year;
 
   const [hoveredPlant, setHoveredPlant] = useState(null);
@@ -226,7 +233,7 @@ export default function Analytics() {
             onChange={(e) => setSelectedPlantId(e.target.value)}
           >
             <option value="">All plants</option>
-            {plants.map((p) => (
+            {harvestedPlants.map((p) => (
               <option key={p._id} value={p._id}>{p.emoji} {p.name}</option>
             ))}
           </select>

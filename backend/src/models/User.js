@@ -8,6 +8,7 @@ const userSchema = new mongoose.Schema(
     passwordHash: { type: String, required: true },
     role: { type: String, enum: ['owner', 'helper'], default: 'owner' },
     active: { type: Boolean, default: true },
+    hiddenPlants: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Plant' }],
   },
   { timestamps: true }
 );

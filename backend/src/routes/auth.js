@@ -71,6 +71,26 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// POST /api/auth/me/hidden-plants — toggle a plant in/out of the user's hidden list
+router.post('/me/hidden-plants', requireAuth, async (req, res) => {
+  try {
+    const { plantId } = req.body;
+    if (!plantId) return res.status(400).json({ error: 'plantId is required' });
+    const user = await User.findById(req.userId);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    const idx = user.hiddenPlants.findIndex((id) => id.toString() === plantId);
+    if (idx === -1) {
+      user.hiddenPlants.push(plantId);
+    } else {
+      user.hiddenPlants.splice(idx, 1);
+    }
+    await user.save();
+    res.json({ hiddenPlants: user.hiddenPlants });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // GET /api/auth/me
 router.get('/me', requireAuth, async (req, res) => {
   try {

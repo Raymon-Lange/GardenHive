@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import api from '../lib/api';
 import { useAuth } from '../context/AuthContext';
+import { useGarden } from '../context/GardenContext';
 import { Rows3, Leaf, ChevronRight, TrendingUp, Plus } from 'lucide-react';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -56,10 +57,10 @@ function useBeds() {
   });
 }
 
-function usePlants() {
+function usePlants(ownerId) {
   return useQuery({
-    queryKey: ['plants'],
-    queryFn: () => api.get('/plants').then((r) => r.data),
+    queryKey: ['plants', ownerId],
+    queryFn: () => api.get('/plants', { params: ownerId ? { ownerId } : undefined }).then((r) => r.data),
   });
 }
 
@@ -78,12 +79,14 @@ function rollingLabel() {
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const { activeGarden } = useGarden();
   const queryClient = useQueryClient();
   const { data: totals = [] } = useHarvestTotals();
   const { data: monthly = [] } = useMonthly();
   const { data: recent = [] } = useRecentHarvests();
   const { data: beds = [] } = useBeds();
-  const { data: plants = [] } = usePlants();
+  const gardenOwnerId = activeGarden?.ownerId?.toString();
+  const { data: plants = [] } = usePlants(gardenOwnerId);
 
   const [form, setForm] = useState({
     plantId: '', bedId: '', quantity: '', unit: 'lbs',

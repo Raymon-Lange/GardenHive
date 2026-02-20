@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../lib/api';
+import { useGarden } from '../context/GardenContext';
 import { ArrowLeft, X, Search } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -12,15 +13,15 @@ function useBed(id) {
   });
 }
 
-function usePlants() {
+function usePlants(ownerId) {
   return useQuery({
-    queryKey: ['plants'],
-    queryFn: () => api.get('/plants').then((r) => r.data),
+    queryKey: ['plants', ownerId],
+    queryFn: () => api.get('/plants', { params: ownerId ? { ownerId } : undefined }).then((r) => r.data),
   });
 }
 
-function PlantPicker({ onSelect, onClear, onClose }) {
-  const { data: plants = [] } = usePlants();
+function PlantPicker({ ownerId, onSelect, onClear, onClose }) {
+  const { data: plants = [] } = usePlants(ownerId);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
 
@@ -109,8 +110,10 @@ function PlantPicker({ onSelect, onClear, onClose }) {
 export default function BedDetail() {
   const { id } = useParams();
   const queryClient = useQueryClient();
+  const { activeGarden } = useGarden();
   const { data: bed, isLoading } = useBed(id);
   const [selectedCell, setSelectedCell] = useState(null); // {row, col}
+  const gardenOwnerId = activeGarden?.ownerId?.toString();
 
   const updateCell = useMutation({
     mutationFn: ({ row, col, plantId }) =>
@@ -241,6 +244,7 @@ export default function BedDetail() {
       {/* Plant picker modal */}
       {selectedCell && (
         <PlantPicker
+          ownerId={gardenOwnerId}
           onSelect={(plant) =>
             updateCell.mutate({ row: selectedCell.row, col: selectedCell.col, plantId: plant._id })
           }
