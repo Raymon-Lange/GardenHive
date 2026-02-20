@@ -1,0 +1,38 @@
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - gardenhive
+
+  backend:
+    image: ghcr.io/raymon-lange/gardenhive-backend:latest
+    restart: unless-stopped
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/gardenhive
+      - JWT_SECRET=${JWT_SECRET}
+      - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost}
+      - PORT=5000
+    depends_on:
+      - mongo
+    networks:
+      - gardenhive
+
+  frontend:
+    image: ghcr.io/raymon-lange/gardenhive-frontend:latest
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - gardenhive
+
+volumes:
+  mongo_data:
+
+networks:
+  gardenhive:
+    driver: bridge
