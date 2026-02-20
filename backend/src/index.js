@@ -7,6 +7,7 @@ const authRoutes = require('./routes/auth');
 const bedsRoutes = require('./routes/beds');
 const plantsRoutes = require('./routes/plants');
 const harvestsRoutes = require('./routes/harvests');
+const accessRoutes = require('./routes/access');
 
 const app = express();
 
@@ -17,6 +18,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/beds', bedsRoutes);
 app.use('/api/plants', plantsRoutes);
 app.use('/api/harvests', harvestsRoutes);
+app.use('/api/access', accessRoutes);
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 

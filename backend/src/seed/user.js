@@ -5,6 +5,7 @@ const DEFAULT_USER = {
   name: 'Mike Jones',
   email: 'mike@gardenhive.com',
   password: '321qaz',
+  role: 'owner',
 };
 
 async function seedUser({ force = false } = {}) {
@@ -19,7 +20,7 @@ async function seedUser({ force = false } = {}) {
   }
 
   const passwordHash = await bcrypt.hash(DEFAULT_USER.password, 12);
-  const user = await User.create({ name: DEFAULT_USER.name, email: DEFAULT_USER.email, passwordHash });
+  const user = await User.create({ name: DEFAULT_USER.name, email: DEFAULT_USER.email, passwordHash, role: DEFAULT_USER.role });
 
   console.log(`Created default user:`);
   console.log(`  Name:     ${user.name}`);

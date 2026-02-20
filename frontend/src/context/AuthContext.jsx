@@ -21,8 +21,8 @@ export function AuthProvider({ children }) {
     return data.user;
   }, []);
 
-  const register = useCallback(async (name, email, password) => {
-    const { data } = await api.post('/auth/register', { name, email, password });
+  const register = useCallback(async (name, email, password, role = 'owner') => {
+    const { data } = await api.post('/auth/register', { name, email, password, role });
     localStorage.setItem('gh_token', data.token);
     localStorage.setItem('gh_user', JSON.stringify(data.user));
     setUser(data.user);

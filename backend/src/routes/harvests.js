@@ -1,14 +1,15 @@
 const express = require('express');
+const { Types: { ObjectId } } = require('mongoose');
 const Harvest = require('../models/Harvest');
-const requireAuth = require('../middleware/auth');
+const { requireAccess } = require('../middleware/auth');
 
 const router = express.Router();
 
-// GET /api/harvests/totals — cumulative by plant, supports ?from=&to= date range
-router.get('/totals', requireAuth, async (req, res) => {
+// GET /api/harvests/totals
+router.get('/totals', requireAccess('analytics'), async (req, res) => {
   try {
     const { season, from, to } = req.query;
-    const match = { userId: require('mongoose').Types.ObjectId.createFromHexString(req.userId) };
+    const match = { userId: ObjectId.createFromHexString(req.gardenOwnerId) };
     if (season) match.season = season;
     if (from || to) {
       match.harvestedAt = {};
@@ -25,14 +26,7 @@ router.get('/totals', requireAuth, async (req, res) => {
           count: { $sum: 1 },
         },
       },
-      {
-        $lookup: {
-          from: 'plants',
-          localField: '_id.plantId',
-          foreignField: '_id',
-          as: 'plant',
-        },
-      },
+      { $lookup: { from: 'plants', localField: '_id.plantId', foreignField: '_id', as: 'plant' } },
       { $unwind: '$plant' },
       {
         $project: {
@@ -56,12 +50,12 @@ router.get('/totals', requireAuth, async (req, res) => {
   }
 });
 
-// GET /api/harvests/yoy — monthly totals grouped by year (all years, for line chart)
-router.get('/yoy', requireAuth, async (req, res) => {
+// GET /api/harvests/yoy
+router.get('/yoy', requireAccess('analytics'), async (req, res) => {
   try {
     const { plantId } = req.query;
-    const match = { userId: require('mongoose').Types.ObjectId.createFromHexString(req.userId) };
-    if (plantId) match.plantId = require('mongoose').Types.ObjectId.createFromHexString(plantId);
+    const match = { userId: ObjectId.createFromHexString(req.gardenOwnerId) };
+    if (plantId) match.plantId = ObjectId.createFromHexString(plantId);
 
     const data = await Harvest.aggregate([
       { $match: match },
@@ -75,7 +69,6 @@ router.get('/yoy', requireAuth, async (req, res) => {
       { $sort: { '_id.year': 1, '_id.month': 1 } },
     ]);
 
-    // Reshape into { year: { Jan: {oz, count}, ... } }
     const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     const byYear = {};
     data.forEach(({ _id, totalOz, count }) => {
@@ -84,7 +77,6 @@ router.get('/yoy', requireAuth, async (req, res) => {
       byYear[yr][MONTHS[_id.month - 1]] = { oz: Math.round(totalOz), count };
     });
 
-    // Fill missing months with 0
     const years = Object.keys(byYear).sort();
     const result = MONTHS.map((month) => {
       const row = { month };
@@ -101,17 +93,17 @@ router.get('/yoy', requireAuth, async (req, res) => {
   }
 });
 
-// GET /api/harvests/weekly?year=2025&plantId= — week-by-week totals for a year
-router.get('/weekly', requireAuth, async (req, res) => {
+// GET /api/harvests/weekly
+router.get('/weekly', requireAccess('analytics'), async (req, res) => {
   try {
     const year    = parseInt(req.query.year) || new Date().getFullYear();
     const plantId = req.query.plantId;
 
     const match = {
-      userId: require('mongoose').Types.ObjectId.createFromHexString(req.userId),
+      userId: ObjectId.createFromHexString(req.gardenOwnerId),
       harvestedAt: { $gte: new Date(`${year}-01-01`), $lte: new Date(`${year}-12-31T23:59:59`) },
     };
-    if (plantId) match.plantId = require('mongoose').Types.ObjectId.createFromHexString(plantId);
+    if (plantId) match.plantId = ObjectId.createFromHexString(plantId);
 
     const data = await Harvest.aggregate([
       { $match: match },
@@ -125,14 +117,12 @@ router.get('/weekly', requireAuth, async (req, res) => {
       { $sort: { '_id.week': 1 } },
     ]);
 
-    // Fill all 52 weeks
     const result = Array.from({ length: 52 }, (_, i) => {
       const week = i + 1;
       const found = data.find((d) => d._id.week === week);
       return { week: `Wk ${week}`, oz: found ? Math.round(found.totalOz) : 0, count: found?.count || 0 };
     });
 
-    // Trim trailing empty weeks
     let last = result.length - 1;
     while (last > 0 && result[last].oz === 0 && result[last].count === 0) last--;
     res.json(result.slice(0, last + 1));
@@ -141,11 +131,11 @@ router.get('/weekly', requireAuth, async (req, res) => {
   }
 });
 
-// GET /api/harvests/years — distinct years with harvest data
-router.get('/years', requireAuth, async (req, res) => {
+// GET /api/harvests/years
+router.get('/years', requireAccess('analytics'), async (req, res) => {
   try {
     const years = await Harvest.aggregate([
-      { $match: { userId: require('mongoose').Types.ObjectId.createFromHexString(req.userId) } },
+      { $match: { userId: ObjectId.createFromHexString(req.gardenOwnerId) } },
       { $group: { _id: { $year: '$harvestedAt' } } },
       { $sort: { _id: -1 } },
     ]);
@@ -155,8 +145,8 @@ router.get('/years', requireAuth, async (req, res) => {
   }
 });
 
-// GET /api/harvests/monthly — rolling 12 months oz totals (today - 12 months → today)
-router.get('/monthly', requireAuth, async (req, res) => {
+// GET /api/harvests/monthly
+router.get('/monthly', requireAccess('analytics'), async (req, res) => {
   try {
     const now = new Date();
     const from = new Date(now);
@@ -165,7 +155,7 @@ router.get('/monthly', requireAuth, async (req, res) => {
     from.setHours(0, 0, 0, 0);
 
     const match = {
-      userId: require('mongoose').Types.ObjectId.createFromHexString(req.userId),
+      userId: ObjectId.createFromHexString(req.gardenOwnerId),
       harvestedAt: { $gte: from, $lte: now },
     };
 
@@ -181,7 +171,6 @@ router.get('/monthly', requireAuth, async (req, res) => {
       { $sort: { '_id.year': 1, '_id.month': 1 } },
     ]);
 
-    // Build ordered 12-month labels (e.g. "Mar 25", "Apr 25", ... "Feb 26")
     const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     const result = [];
     for (let i = 0; i < 12; i++) {
@@ -201,10 +190,10 @@ router.get('/monthly', requireAuth, async (req, res) => {
 });
 
 // GET /api/harvests
-router.get('/', requireAuth, async (req, res) => {
+router.get('/', requireAccess('analytics'), async (req, res) => {
   try {
     const { season, plantId, limit = 50 } = req.query;
-    const filter = { userId: req.userId };
+    const filter = { userId: req.gardenOwnerId };
     if (season) filter.season = season;
     if (plantId) filter.plantId = plantId;
     const harvests = await Harvest.find(filter)
@@ -219,14 +208,14 @@ router.get('/', requireAuth, async (req, res) => {
 });
 
 // POST /api/harvests
-router.post('/', requireAuth, async (req, res) => {
+router.post('/', requireAccess('harvests_analytics'), async (req, res) => {
   try {
     const { plantId, bedId, quantity, unit, harvestedAt, notes } = req.body;
     if (!plantId || quantity == null || !unit) {
       return res.status(400).json({ error: 'plantId, quantity, and unit are required' });
     }
     const harvest = await Harvest.create({
-      userId: req.userId,
+      userId: req.gardenOwnerId,
       plantId,
       bedId: bedId || null,
       quantity: Number(quantity),
@@ -243,9 +232,9 @@ router.post('/', requireAuth, async (req, res) => {
 });
 
 // DELETE /api/harvests/:id
-router.delete('/:id', requireAuth, async (req, res) => {
+router.delete('/:id', requireAccess('harvests_analytics'), async (req, res) => {
   try {
-    const harvest = await Harvest.findOneAndDelete({ _id: req.params.id, userId: req.userId });
+    const harvest = await Harvest.findOneAndDelete({ _id: req.params.id, userId: req.gardenOwnerId });
     if (!harvest) return res.status(404).json({ error: 'Harvest not found' });
     res.json({ message: 'Harvest deleted' });
   } catch (err) {

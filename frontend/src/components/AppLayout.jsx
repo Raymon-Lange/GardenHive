@@ -1,18 +1,30 @@
 import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LayoutDashboard, Leaf, LogOut, Map, BarChart2, Menu, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useGarden } from '../context/GardenContext';
+import {
+  LayoutDashboard, Leaf, LogOut, Map, BarChart2,
+  Menu, X, ChevronLeft, ChevronRight, ShieldCheck,
+} from 'lucide-react';
 import clsx from 'clsx';
 
-const navItems = [
-  { to: '/dashboard', label: 'Dashboard',  icon: LayoutDashboard },
-  { to: '/map',       label: 'Garden Map', icon: Map },
-  { to: '/harvests',  label: 'Harvests',   icon: Leaf },
-  { to: '/analytics', label: 'Analytics',  icon: BarChart2 },
+const ALL_NAV_ITEMS = [
+  { to: '/dashboard', label: 'Dashboard',  icon: LayoutDashboard, minPermission: 'full' },
+  { to: '/map',       label: 'Garden Map', icon: Map,             minPermission: 'full' },
+  { to: '/harvests',  label: 'Harvests',   icon: Leaf,            minPermission: 'harvests_analytics' },
+  { to: '/analytics', label: 'Analytics',  icon: BarChart2,       minPermission: 'analytics' },
 ];
+
+const LEVELS = { analytics: 1, harvests_analytics: 2, full: 3, owner: 4 };
+
+function allowedNavItems(permission) {
+  const level = LEVELS[permission] ?? 4;
+  return ALL_NAV_ITEMS.filter((item) => (LEVELS[item.minPermission] ?? 1) <= level);
+}
 
 export default function AppLayout({ children }) {
   const { user, logout } = useAuth();
+  const { permission, isOwnGarden, sharedGardens, activeGarden, setActiveGarden, isAwaitingInvite } = useGarden();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed]   = useState(false);
@@ -20,6 +32,48 @@ export default function AppLayout({ children }) {
   function handleLogout() {
     logout();
     navigate('/');
+  }
+
+  function handleGardenSwitch(e) {
+    const val = e.target.value;
+    if (val === 'own') {
+      setActiveGarden(null);
+      navigate('/dashboard');
+    } else {
+      const garden = sharedGardens.find((g) => g.ownerId.toString() === val);
+      if (garden) {
+        setActiveGarden(garden);
+        // Navigate to first accessible page
+        const level = LEVELS[garden.permission] ?? 1;
+        if (level >= LEVELS['full']) navigate('/dashboard');
+        else if (level >= LEVELS['harvests_analytics']) navigate('/harvests');
+        else navigate('/analytics');
+      }
+    }
+    setMobileOpen(false);
+  }
+
+  const navItems = allowedNavItems(permission);
+  const showSwitcher = user?.role === 'helper' || sharedGardens.length > 0;
+  const switcherValue = activeGarden ? activeGarden.ownerId.toString() : 'own';
+
+  // Waiting for invite screen (helper with no access yet)
+  if (isAwaitingInvite) {
+    return (
+      <div className="min-h-screen bg-garden-50 flex flex-col items-center justify-center px-4 text-center">
+        <span className="text-5xl mb-4">🌿</span>
+        <h1 className="text-xl font-bold text-garden-900 mb-2">Waiting for an invite</h1>
+        <p className="text-garden-600 text-sm max-w-sm">
+          Ask a garden owner to invite your email address. Once they do, you'll see their garden here.
+        </p>
+        <button
+          onClick={handleLogout}
+          className="mt-6 flex items-center gap-2 text-sm text-garden-500 hover:text-garden-800"
+        >
+          <LogOut size={15} /> Sign out
+        </button>
+      </div>
+    );
   }
 
   return (
@@ -47,10 +101,8 @@ export default function AppLayout({ children }) {
         className={clsx(
           'bg-garden-800 text-white flex flex-col',
           'transition-all duration-300 ease-in-out',
-          // Mobile: fixed drawer sliding in from left
           'fixed inset-y-0 left-0 z-50 w-64',
           mobileOpen ? 'translate-x-0' : '-translate-x-full',
-          // Desktop: static, no translate, width based on collapsed state
           'md:static md:inset-auto md:z-auto md:translate-x-0 md:shrink-0',
           collapsed ? 'md:w-16' : 'md:w-56'
         )}
@@ -61,10 +113,7 @@ export default function AppLayout({ children }) {
             <span className="text-xl font-bold tracking-tight whitespace-nowrap">🌿 GardenHive</span>
             <p className="text-garden-300 text-xs mt-1 truncate">{user?.name}</p>
           </div>
-          {collapsed && (
-            <span className="hidden md:block text-xl">🌿</span>
-          )}
-          {/* Close button — mobile only */}
+          {collapsed && <span className="hidden md:block text-xl">🌿</span>}
           <button
             onClick={() => setMobileOpen(false)}
             className="md:hidden p-1 rounded hover:bg-garden-700 ml-auto"
@@ -72,6 +121,24 @@ export default function AppLayout({ children }) {
             <X size={20} />
           </button>
         </div>
+
+        {/* Garden switcher */}
+        {showSwitcher && !collapsed && (
+          <div className="px-3 pt-3">
+            <select
+              value={switcherValue}
+              onChange={handleGardenSwitch}
+              className="w-full bg-garden-700 text-white text-xs rounded-lg px-3 py-2 border border-garden-600 focus:outline-none focus:border-garden-400"
+            >
+              {user?.role === 'owner' && <option value="own">🌱 My Garden</option>}
+              {sharedGardens.map((g) => (
+                <option key={g.ownerId} value={g.ownerId.toString()}>
+                  🌿 {g.ownerName}'s Garden
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {/* Nav items */}
         <nav className="flex-1 px-3 py-4 space-y-1">
@@ -95,11 +162,31 @@ export default function AppLayout({ children }) {
               <span className={clsx(collapsed && 'md:hidden')}>{label}</span>
             </NavLink>
           ))}
+
+          {/* Admin link — owner viewing own garden only */}
+          {user?.role === 'owner' && isOwnGarden && (
+            <NavLink
+              to="/admin"
+              title={collapsed ? 'Admin' : undefined}
+              onClick={() => setMobileOpen(false)}
+              className={({ isActive }) =>
+                clsx(
+                  'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+                  isActive
+                    ? 'bg-garden-600 text-white'
+                    : 'text-garden-200 hover:bg-garden-700 hover:text-white',
+                  collapsed && 'md:justify-center md:px-0'
+                )
+              }
+            >
+              <ShieldCheck size={18} />
+              <span className={clsx(collapsed && 'md:hidden')}>Admin</span>
+            </NavLink>
+          )}
         </nav>
 
         {/* Footer */}
         <div className="px-3 py-4 border-t border-garden-700 space-y-1">
-          {/* Desktop collapse toggle */}
           <button
             onClick={() => setCollapsed(c => !c)}
             title={collapsed ? 'Expand' : 'Collapse'}
@@ -110,8 +197,6 @@ export default function AppLayout({ children }) {
           >
             {collapsed ? <ChevronRight size={18} /> : <><ChevronLeft size={18} /><span>Collapse</span></>}
           </button>
-
-          {/* Sign out */}
           <button
             onClick={handleLogout}
             title={collapsed ? 'Sign out' : undefined}
