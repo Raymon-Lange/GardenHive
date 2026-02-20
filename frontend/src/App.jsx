@@ -15,6 +15,7 @@ import Analytics from './pages/Analytics';
 import BedDetail from './pages/BedDetail';
 import Harvests from './pages/Harvests';
 import Admin from './pages/Admin';
+import Profile from './pages/Profile';
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },
@@ -45,6 +46,7 @@ export default function App() {
               <Route path="/analytics" element={<PrivatePage><Analytics /></PrivatePage>} />
               <Route path="/harvests" element={<PrivatePage><Harvests /></PrivatePage>} />
               <Route path="/admin" element={<PrivatePage><Admin /></PrivatePage>} />
+              <Route path="/profile" element={<PrivatePage><Profile /></PrivatePage>} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </BrowserRouter>

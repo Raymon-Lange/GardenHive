@@ -1,9 +1,10 @@
 const jwt = require('jsonwebtoken');
 const GardenAccess = require('../models/GardenAccess');
+const User = require('../models/User');
 
 const LEVELS = { analytics: 1, harvests_analytics: 2, full: 3, owner: 4 };
 
-function requireAuth(req, res, next) {
+async function requireAuth(req, res, next) {
   const header = req.headers.authorization;
   if (!header || !header.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'No token provided' });
@@ -11,6 +12,10 @@ function requireAuth(req, res, next) {
   const token = header.slice(7);
   try {
     const payload = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(payload.userId).select('active');
+    if (!user || user.active === false) {
+      return res.status(401).json({ error: 'Account is inactive' });
+    }
     req.userId = payload.userId;
     next();
   } catch {

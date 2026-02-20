@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useGarden } from '../context/GardenContext';
 import {
   LayoutDashboard, Leaf, LogOut, Map, BarChart2,
-  Menu, X, ChevronLeft, ChevronRight, ShieldCheck,
+  Menu, X, ChevronLeft, ChevronRight, ShieldCheck, UserCircle,
 } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -162,6 +162,25 @@ export default function AppLayout({ children }) {
               <span className={clsx(collapsed && 'md:hidden')}>{label}</span>
             </NavLink>
           ))}
+
+          {/* Profile link — always visible */}
+          <NavLink
+            to="/profile"
+            title={collapsed ? 'Profile' : undefined}
+            onClick={() => setMobileOpen(false)}
+            className={({ isActive }) =>
+              clsx(
+                'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+                isActive
+                  ? 'bg-garden-600 text-white'
+                  : 'text-garden-200 hover:bg-garden-700 hover:text-white',
+                collapsed && 'md:justify-center md:px-0'
+              )
+            }
+          >
+            <UserCircle size={18} />
+            <span className={clsx(collapsed && 'md:hidden')}>Profile</span>
+          </NavLink>
 
           {/* Admin link — owner viewing own garden only */}
           {user?.role === 'owner' && isOwnGarden && (
