@@ -9,6 +9,8 @@ const userSchema = new mongoose.Schema(
     role: { type: String, enum: ['owner', 'helper'], default: 'owner' },
     active: { type: Boolean, default: true },
     hiddenPlants: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Plant' }],
+    gardenName:  { type: String, trim: true },
+    gardenImage: { type: String },
   },
   { timestamps: true }
 );

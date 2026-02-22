@@ -27,4 +27,10 @@ api.interceptors.response.use(
   }
 );
 
+export function uploadUrl(filePath) {
+  if (!filePath) return null;
+  const base = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace(/\/api$/, '');
+  return `${base}${filePath}`;
+}
+
 export default api;

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useGarden } from '../context/GardenContext';
+import { uploadUrl } from '../lib/api';
 import {
   LayoutDashboard, Leaf, LogOut, Map, BarChart2,
   Menu, X, ChevronLeft, ChevronRight, ShieldCheck, UserCircle,
@@ -57,6 +58,12 @@ export default function AppLayout({ children }) {
   const showSwitcher = user?.role === 'helper' || sharedGardens.length > 0;
   const switcherValue = activeGarden ? activeGarden.ownerId.toString() : 'own';
 
+  // Current garden display
+  const currentGardenName  = activeGarden
+    ? (activeGarden.gardenName  || `${activeGarden.ownerName}'s Garden`)
+    : (user?.gardenName || 'My Garden');
+  const currentGardenImage = activeGarden ? activeGarden.gardenImage : user?.gardenImage;
+
   // Waiting for invite screen (helper with no access yet)
   if (isAwaitingInvite) {
     return (
@@ -109,11 +116,36 @@ export default function AppLayout({ children }) {
       >
         {/* Sidebar header */}
         <div className="px-4 py-5 border-b border-garden-700 flex items-center justify-between min-h-[72px]">
-          <div className={clsx('overflow-hidden', collapsed && 'md:hidden')}>
-            <span className="text-xl font-bold tracking-tight whitespace-nowrap">🌿 GardenHive</span>
-            <p className="text-garden-300 text-xs mt-1 truncate">{user?.name}</p>
+          <div className={clsx('flex items-center gap-2.5 overflow-hidden', collapsed && 'md:hidden')}>
+            {currentGardenImage ? (
+              <img
+                src={uploadUrl(currentGardenImage)}
+                alt="Garden"
+                className="w-8 h-8 rounded-full object-cover shrink-0 border border-garden-600"
+              />
+            ) : (
+              <span className="text-xl shrink-0">🌿</span>
+            )}
+            <div className="overflow-hidden">
+              <p className="text-sm font-bold tracking-tight whitespace-nowrap truncate leading-tight">
+                {currentGardenName}
+              </p>
+              <p className="text-garden-300 text-xs mt-0.5 truncate">{user?.name}</p>
+            </div>
           </div>
-          {collapsed && <span className="hidden md:block text-xl">🌿</span>}
+          {collapsed && (
+            <div className="hidden md:flex items-center justify-center w-full">
+              {currentGardenImage ? (
+                <img
+                  src={uploadUrl(currentGardenImage)}
+                  alt="Garden"
+                  className="w-8 h-8 rounded-full object-cover border border-garden-600"
+                />
+              ) : (
+                <span className="text-xl">🌿</span>
+              )}
+            </div>
+          )}
           <button
             onClick={() => setMobileOpen(false)}
             className="md:hidden p-1 rounded hover:bg-garden-700 ml-auto"
@@ -130,10 +162,14 @@ export default function AppLayout({ children }) {
               onChange={handleGardenSwitch}
               className="w-full bg-garden-700 text-white text-xs rounded-lg px-3 py-2 border border-garden-600 focus:outline-none focus:border-garden-400"
             >
-              {user?.role === 'owner' && <option value="own">🌱 My Garden</option>}
+              {user?.role === 'owner' && (
+                <option value="own">
+                  {user.gardenName || 'My Garden'}
+                </option>
+              )}
               {sharedGardens.map((g) => (
                 <option key={g.ownerId} value={g.ownerId.toString()}>
-                  🌿 {g.ownerName}'s Garden
+                  {g.gardenName || `${g.ownerName}'s Garden`}
                 </option>
               ))}
             </select>

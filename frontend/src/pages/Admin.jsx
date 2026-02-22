@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ShieldCheck, UserPlus, Trash2, Leaf, Pencil, Eye, EyeOff } from 'lucide-react';
-import api from '../lib/api';
+import { ShieldCheck, UserPlus, Trash2, Leaf, Pencil, Eye, EyeOff, ImagePlus } from 'lucide-react';
+import api, { uploadUrl } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { useGarden } from '../context/GardenContext';
 
@@ -198,11 +198,19 @@ function PlantForm({ initial, onSave, onCancel, isPending, error }) {
 }
 
 export default function Admin() {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const { isOwnGarden } = useGarden();
   const queryClient = useQueryClient();
 
   const [activeTab, setActiveTab] = useState('access');
+
+  // Garden Settings tab state
+  const [gardenNameInput, setGardenNameInput] = useState(user?.gardenName ?? '');
+  const [gardenNameSaved, setGardenNameSaved] = useState(false);
+  const [gardenNameError, setGardenNameError] = useState('');
+  const [gardenNameLoading, setGardenNameLoading] = useState(false);
+  const [imageError, setImageError] = useState('');
+  const [imageLoading, setImageLoading] = useState(false);
 
   // Access tab state
   const [inviteForm, setInviteForm] = useState({ email: '', permission: 'analytics' });
@@ -313,6 +321,57 @@ export default function Admin() {
     setEditingPlant({});
   }
 
+  // ── Garden Settings handlers ─────────────────────────────────────────────
+  async function handleSaveGardenName(e) {
+    e.preventDefault();
+    setGardenNameError('');
+    setGardenNameSaved(false);
+    setGardenNameLoading(true);
+    try {
+      const { data } = await api.put('/auth/me/garden', { gardenName: gardenNameInput });
+      updateUser({ gardenName: data.gardenName });
+      setGardenNameSaved(true);
+    } catch (err) {
+      setGardenNameError(err.response?.data?.error ?? 'Failed to save');
+    } finally {
+      setGardenNameLoading(false);
+    }
+  }
+
+  async function handleImageUpload(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { setImageError('Image must be under 5 MB'); return; }
+    setImageError('');
+    setImageLoading(true);
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+      const { data } = await api.post('/auth/me/garden-image', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      updateUser({ gardenImage: data.gardenImage });
+    } catch (err) {
+      setImageError(err.response?.data?.error ?? 'Upload failed');
+    } finally {
+      setImageLoading(false);
+      e.target.value = '';
+    }
+  }
+
+  async function handleRemoveImage() {
+    setImageError('');
+    setImageLoading(true);
+    try {
+      const { data } = await api.delete('/auth/me/garden-image');
+      updateUser({ gardenImage: data.gardenImage });
+    } catch (err) {
+      setImageError(err.response?.data?.error ?? 'Failed to remove image');
+    } finally {
+      setImageLoading(false);
+    }
+  }
+
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
     <div>
@@ -328,8 +387,9 @@ export default function Admin() {
       {/* Tab switcher */}
       <div className="flex gap-2 mb-6">
         {[
-          { key: 'access', label: 'Garden Access' },
-          { key: 'plants', label: 'My Plants' },
+          { key: 'access',   label: 'Garden Access' },
+          { key: 'plants',   label: 'My Plants' },
+          { key: 'settings', label: 'Garden Settings' },
         ].map(({ key, label }) => (
           <button
             key={key}
@@ -526,6 +586,76 @@ export default function Admin() {
               error={plantError}
             />
           )}
+        </div>
+      )}
+
+      {/* ── Garden Settings tab ── */}
+      {activeTab === 'settings' && (
+        <div className="space-y-6 max-w-lg">
+
+          {/* Garden name */}
+          <div className="card p-5">
+            <h2 className="font-semibold text-garden-900 mb-4">Garden name</h2>
+            <form onSubmit={handleSaveGardenName} className="space-y-3">
+              <input
+                type="text"
+                className="input w-full"
+                placeholder="e.g. The Back Garden"
+                value={gardenNameInput}
+                onChange={(e) => { setGardenNameInput(e.target.value); setGardenNameSaved(false); }}
+              />
+              {gardenNameError && <p className="text-red-600 text-sm">{gardenNameError}</p>}
+              <div className="flex items-center gap-3">
+                <button type="submit" className="btn-primary" disabled={gardenNameLoading}>
+                  {gardenNameLoading ? 'Saving…' : 'Save name'}
+                </button>
+                {gardenNameSaved && <span className="text-sm text-garden-600">Saved</span>}
+              </div>
+            </form>
+          </div>
+
+          {/* Garden image */}
+          <div className="card p-5">
+            <h2 className="font-semibold text-garden-900 mb-4">Garden image</h2>
+
+            {user?.gardenImage ? (
+              <div className="flex items-center gap-4 mb-4">
+                <img
+                  src={uploadUrl(user.gardenImage)}
+                  alt="Garden"
+                  className="w-20 h-20 rounded-full object-cover border-2 border-garden-200"
+                />
+                <button
+                  type="button"
+                  onClick={handleRemoveImage}
+                  disabled={imageLoading}
+                  className="text-sm text-red-600 hover:text-red-800 transition-colors"
+                >
+                  {imageLoading ? 'Removing…' : 'Remove image'}
+                </button>
+              </div>
+            ) : (
+              <div className="w-20 h-20 rounded-full bg-garden-100 flex items-center justify-center mb-4 text-3xl">
+                🌿
+              </div>
+            )}
+
+            {imageError && <p className="text-red-600 text-sm mb-3">{imageError}</p>}
+
+            <label className="btn-secondary cursor-pointer inline-flex items-center gap-2">
+              <ImagePlus size={16} />
+              {imageLoading ? 'Uploading…' : user?.gardenImage ? 'Change image' : 'Upload image'}
+              <input
+                type="file"
+                accept="image/*"
+                className="sr-only"
+                disabled={imageLoading}
+                onChange={handleImageUpload}
+              />
+            </label>
+            <p className="text-xs text-garden-500 mt-2">JPG, PNG, GIF or WebP · max 5 MB</p>
+          </div>
+
         </div>
       )}
     </div>

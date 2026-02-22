@@ -9,11 +9,13 @@ const router = express.Router();
 router.get('/shared', requireAuth, async (req, res) => {
   try {
     const grants = await GardenAccess.find({ granteeId: req.userId, status: 'active' })
-      .populate('ownerId', 'name email');
+      .populate('ownerId', 'name email gardenName gardenImage');
     const gardens = grants.map((g) => ({
       ownerId:     g.ownerId._id,
       ownerName:   g.ownerId.name,
       ownerEmail:  g.ownerId.email,
+      gardenName:  g.ownerId.gardenName  || null,
+      gardenImage: g.ownerId.gardenImage || null,
       permission:  g.permission,
     }));
     res.json(gardens);

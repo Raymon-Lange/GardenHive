@@ -1,6 +1,9 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const path = require('path');
+const fs = require('fs');
+const multer = require('multer');
 const User = require('../models/User');
 const GardenAccess = require('../models/GardenAccess');
 const GardenBed = require('../models/GardenBed');
@@ -9,12 +12,39 @@ const requireAuth = require('../middleware/auth');
 
 const router = express.Router();
 
+// ── Multer setup for garden images ───────────────────────────────────────────
+const uploadsDir = path.join(__dirname, '../../uploads');
+if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+
+const storage = multer.diskStorage({
+  destination: (_req, _file, cb) => cb(null, uploadsDir),
+  filename: (_req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    cb(null, `garden-${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`);
+  },
+});
+const upload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) cb(null, true);
+    else cb(new Error('Only image files are allowed'));
+  },
+});
+
 function signToken(userId) {
   return jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '7d' });
 }
 
 function userPayload(user) {
-  return { id: user._id, name: user.name, email: user.email, role: user.role || 'owner' };
+  return {
+    id: user._id,
+    name: user.name,
+    email: user.email,
+    role: user.role || 'owner',
+    gardenName:  user.gardenName  || null,
+    gardenImage: user.gardenImage || null,
+  };
 }
 
 // POST /api/auth/register
@@ -173,6 +203,56 @@ router.delete('/me', requireAuth, async (req, res) => {
     }
 
     res.json({ message: 'Account deleted' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PUT /api/auth/me/garden — update garden name
+router.put('/me/garden', requireAuth, async (req, res) => {
+  try {
+    const { gardenName } = req.body;
+    const user = await User.findById(req.userId);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    user.gardenName = gardenName ? gardenName.trim() : null;
+    await user.save();
+    res.json(userPayload(user));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/auth/me/garden-image — upload garden image
+router.post('/me/garden-image', requireAuth, upload.single('image'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'No image file provided' });
+    const user = await User.findById(req.userId);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    // Delete old image if one exists
+    if (user.gardenImage) {
+      const oldPath = path.join(uploadsDir, path.basename(user.gardenImage));
+      if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+    }
+    user.gardenImage = `/uploads/${req.file.filename}`;
+    await user.save();
+    res.json(userPayload(user));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// DELETE /api/auth/me/garden-image — remove garden image
+router.delete('/me/garden-image', requireAuth, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    if (user.gardenImage) {
+      const filePath = path.join(uploadsDir, path.basename(user.gardenImage));
+      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+      user.gardenImage = null;
+      await user.save();
+    }
+    res.json(userPayload(user));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
