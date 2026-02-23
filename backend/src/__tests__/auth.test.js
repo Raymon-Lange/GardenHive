@@ -1,6 +1,6 @@
 const {
   connectDB, disconnectDB, clearDB,
-  authHeader, createUser, createHelper, createSystemPlant,
+  authHeader, createUser, createHelper, createSystemPlant, createBed,
   api,
 } = require('./helpers');
 
@@ -382,5 +382,88 @@ describe('PUT /api/auth/me/garden', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.gardenName).toBeNull();
+  });
+
+  it('sets gardenWidth and gardenHeight and returns them', async () => {
+    const { token } = await createUser();
+    const res = await api()
+      .put('/api/auth/me/garden')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ gardenWidth: 20, gardenHeight: 12 });
+
+    expect(res.status).toBe(200);
+    expect(res.body.gardenWidth).toBe(20);
+    expect(res.body.gardenHeight).toBe(12);
+  });
+
+  it('returns 400 when gardenWidth is zero', async () => {
+    const { token } = await createUser();
+    const res = await api()
+      .put('/api/auth/me/garden')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ gardenWidth: 0 });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/gardenWidth/i);
+  });
+
+  it('returns 400 when gardenWidth is negative', async () => {
+    const { token } = await createUser();
+    const res = await api()
+      .put('/api/auth/me/garden')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ gardenWidth: -5 });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/gardenWidth/i);
+  });
+
+  it('returns 400 when gardenHeight is a fractional value', async () => {
+    const { token } = await createUser();
+    const res = await api()
+      .put('/api/auth/me/garden')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ gardenHeight: 5.5 });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/gardenHeight/i);
+  });
+
+  it('clears gardenWidth when null is sent', async () => {
+    const { token, user } = await createUser({ gardenWidth: 20 });
+    const res = await api()
+      .put('/api/auth/me/garden')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ gardenWidth: null });
+
+    expect(res.status).toBe(200);
+    expect(res.body.gardenWidth).toBeNull();
+  });
+
+  it('returns 400 when reducing width clips a placed bed', async () => {
+    const { token, user } = await createUser({ gardenWidth: 20, gardenHeight: 12 });
+    // Place a bed at col 15, width 4 — right edge at col 19
+    await createBed(user._id, { rows: 2, cols: 4, mapRow: 0, mapCol: 15 });
+
+    const res = await api()
+      .put('/api/auth/me/garden')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ gardenWidth: 10 }); // would clip the bed (15+4=19 > 10)
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/smaller than existing/i);
+  });
+
+  it('returns 400 when reducing height clips a placed bed', async () => {
+    const { token, user } = await createUser({ gardenWidth: 20, gardenHeight: 12 });
+    await createBed(user._id, { rows: 3, cols: 2, mapRow: 9, mapCol: 0 });
+
+    const res = await api()
+      .put('/api/auth/me/garden')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ gardenHeight: 8 }); // would clip bed (9+3=12 > 8)
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/smaller than existing/i);
   });
 });
