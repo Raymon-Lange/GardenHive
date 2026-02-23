@@ -5,6 +5,8 @@ Auto-generated from all feature plans. Last updated: 2026-02-23
 ## Active Technologies
 - Node.js 22 (backend) / React 19 (frontend) + Express 5, Mongoose 9, TanStack React Query 5, React Router 7, Tailwind CSS 3, Lucide React (002-garden-map-snap)
 - MongoDB 7 (002-garden-map-snap)
+- JavaScript (React 19 JSX), Node.js 22 (003-garden-pdf)
+- N/A — PDFs are generated on demand, never stored (003-garden-pdf)
 
 - Node.js 22 (backend) / JavaScript + React 19 (frontend) + Express 5, Mongoose 9, React Router 7, TanStack React (001-existing-features)
 
@@ -25,6 +27,7 @@ npm test && npm run lint
 Node.js 22 (backend) / JavaScript + React 19 (frontend): Follow standard conventions
 
 ## Recent Changes
+- 003-garden-pdf: Added JavaScript (React 19 JSX), Node.js 22
 - 002-garden-map-snap: Added Node.js 22 (backend) / React 19 (frontend) + Express 5, Mongoose 9, TanStack React Query 5, React Router 7, Tailwind CSS 3, Lucide React
 
 - 001-existing-features: Added Node.js 22 (backend) / JavaScript + React 19 (frontend) + Express 5, Mongoose 9, React Router 7, TanStack React

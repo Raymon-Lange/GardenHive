@@ -32,3 +32,72 @@
     @apply block text-sm font-medium text-garden-700 mb-1;
   }
 }
+
+@media print {
+  /* 1. Show only the print view, hide all other page content */
+  body > * {
+    display: none !important;
+  }
+  #garden-print-view {
+    display: block !important;
+    position: static !important;
+    left: 0 !important;
+    width: 100% !important;
+  }
+
+  /* 2. Paper size and margins */
+  @page {
+    size: A4 landscape;
+    margin: 12mm 10mm;
+  }
+
+  /* 3. White background, preserve colours on bed elements */
+  html, body {
+    background: white !important;
+    color: black !important;
+  }
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* 4. Page break after garden map section */
+  [data-print-section="1"] {
+    break-after: page;
+    page-break-after: always;
+  }
+
+  /* 5. Scale the garden grid to fit paper width */
+  .garden-print-grid {
+    transform: scale(var(--print-scale, 1));
+    transform-origin: top left;
+  }
+  .garden-print-grid-wrapper {
+    overflow: hidden;
+    width: 100%;
+  }
+
+  /* 6. Repeating table header on continuation pages */
+  thead {
+    display: table-header-group;
+  }
+  tfoot {
+    display: table-footer-group;
+  }
+  tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* 7. Remove card shadow and overflow clipping */
+  .card {
+    overflow: visible !important;
+    box-shadow: none !important;
+  }
+
+  /* 8. Emoji font stack for reliable print rendering */
+  .emoji-cell {
+    font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
+    font-size: 14px;
+  }
+}

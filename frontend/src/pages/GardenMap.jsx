@@ -5,6 +5,7 @@ import { Plus, ExternalLink, X } from 'lucide-react';
 import api from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import GardenDimensionsModal from '../components/GardenDimensionsModal';
+import GardenPrintView from '../components/GardenPrintView';
 
 const CELL_PX = 28; // pixels per sq ft
 
@@ -46,6 +47,10 @@ export default function GardenMap() {
   const gridRef = useRef(null);
 
   const { data: beds = [], isLoading } = useBeds();
+
+  // PDF / print refs and state
+  const printViewRef = useRef(null);
+  const [isPdfLoading, setIsPdfLoading] = useState(false);
 
   // Drag state
   const [dragging, setDragging] = useState(null);
@@ -161,6 +166,80 @@ export default function GardenMap() {
     // If overlap: bed reverts — React Query data hasn't changed
   }, [dragging, beds, updatePosition]);
 
+  // ── PDF / Print ───────────────────────────────────────────────────────────────
+
+  async function handleDownloadPdf() {
+    if (!printViewRef.current) return;
+    setIsPdfLoading(true);
+    try {
+      const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([
+        import('jspdf'),
+        import('html2canvas'),
+      ]);
+      const printScale = Math.min(1, 794 / ((gardenWidth ?? 1) * CELL_PX));
+      printViewRef.current.style.setProperty('--print-scale', printScale);
+
+      const section1 = printViewRef.current.querySelector('[data-print-section="1"]');
+      const section2 = printViewRef.current.querySelector('[data-print-section="2"]');
+
+      const canvas1 = await html2canvas(section1, { scale: 2, useCORS: true, logging: false });
+      const canvas2 = await html2canvas(section2, { scale: 2, useCORS: true, logging: false });
+
+      const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+      const PAGE_W = pdf.internal.pageSize.getWidth();
+      const PAGE_H = pdf.internal.pageSize.getHeight();
+
+      // Page 1: garden grid
+      const img1 = canvas1.toDataURL('image/png');
+      const h1 = (canvas1.height * PAGE_W) / canvas1.width;
+      pdf.addImage(img1, 'PNG', 0, 0, PAGE_W, Math.min(h1, PAGE_H));
+
+      // Page 2+: shopping list (tile canvas2 across pages if needed)
+      pdf.addPage();
+      const totalH2 = (canvas2.height * PAGE_W) / canvas2.width;
+      if (totalH2 <= PAGE_H) {
+        pdf.addImage(canvas2.toDataURL('image/png'), 'PNG', 0, 0, PAGE_W, totalH2);
+      } else {
+        const sliceHeightPx = Math.floor((PAGE_H / totalH2) * canvas2.height);
+        let offsetPx = 0;
+        let firstPage = true;
+        while (offsetPx < canvas2.height) {
+          if (!firstPage) pdf.addPage();
+          firstPage = false;
+          const chunkPx = Math.min(sliceHeightPx, canvas2.height - offsetPx);
+          const chunkCanvas = document.createElement('canvas');
+          chunkCanvas.width = canvas2.width;
+          chunkCanvas.height = chunkPx;
+          chunkCanvas.getContext('2d').drawImage(
+            canvas2, 0, offsetPx, canvas2.width, chunkPx, 0, 0, canvas2.width, chunkPx
+          );
+          const chunkH = (chunkPx * PAGE_W) / canvas2.width;
+          pdf.addImage(chunkCanvas.toDataURL('image/png'), 'PNG', 0, 0, PAGE_W, chunkH);
+          offsetPx += chunkPx;
+        }
+      }
+
+      const slug = (user?.gardenName || 'garden')
+        .toLowerCase()
+        .replace(/\s+/g, '-')
+        .replace(/[^a-z0-9-]/g, '');
+      const dateStr = new Date().toISOString().split('T')[0];
+      pdf.save(`${slug}-${dateStr}.pdf`);
+    } finally {
+      setIsPdfLoading(false);
+    }
+  }
+
+  function handlePrint() {
+    if (!printViewRef.current) return;
+    const printScale = Math.min(1, 794 / ((gardenWidth ?? 1) * CELL_PX));
+    printViewRef.current.style.setProperty('--print-scale', printScale);
+    const original = document.title;
+    document.title = `${user?.gardenName || 'Garden'} - ${new Date().toISOString().split('T')[0]}`;
+    window.print();
+    window.addEventListener('afterprint', () => { document.title = original; }, { once: true });
+  }
+
   // ── Add Bed form ─────────────────────────────────────────────────────────────
 
   function handleCreateBed(e) {
@@ -211,11 +290,26 @@ export default function GardenMap() {
             {isOwner && ' · drag to reposition'}
           </p>
         </div>
-        {isOwner && (
-          <button className="btn-primary" onClick={() => setShowAddForm((v) => !v)}>
-            <Plus size={16} /> Add bed
+        <div className="flex gap-2 items-center">
+          <button
+            className="btn-secondary print:hidden"
+            onClick={handlePrint}
+          >
+            Print
           </button>
-        )}
+          <button
+            className="btn-secondary print:hidden"
+            onClick={handleDownloadPdf}
+            disabled={isPdfLoading}
+          >
+            {isPdfLoading ? 'Generating…' : 'Download PDF'}
+          </button>
+          {isOwner && (
+            <button className="btn-primary" onClick={() => setShowAddForm((v) => !v)}>
+              <Plus size={16} /> Add bed
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Add Bed form */}
@@ -447,6 +541,15 @@ export default function GardenMap() {
           </div>
         </div>
       )}
+
+      {/* Hidden print view — used by Download PDF (html2canvas) and Print (window.print) */}
+      <GardenPrintView
+        ref={printViewRef}
+        beds={beds}
+        gardenWidth={gardenWidth}
+        gardenHeight={gardenHeight}
+        gardenName={user?.gardenName}
+      />
     </div>
   );
 }
