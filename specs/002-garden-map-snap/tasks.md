@@ -25,7 +25,7 @@
 
 **Purpose**: Confirm the feature branch is clean before any changes.
 
-- [ ] T001 Run `npm test` in `backend/` on branch `002-garden-map-snap` to establish a passing baseline before any modifications
+- [x] T001 Run `npm test` in `backend/` on branch `002-garden-map-snap` to establish a passing baseline before any modifications
 
 ---
 
@@ -35,9 +35,9 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T002 [P] Add `gardenWidth: { type: Number, min: 1, default: null }` and `gardenHeight: { type: Number, min: 1, default: null }` fields to the userSchema in `backend/src/models/User.js`
-- [ ] T003 [P] Update `userPayload()` in `backend/src/routes/auth.js` to include `gardenWidth: user.gardenWidth ?? null` and `gardenHeight: user.gardenHeight ?? null` so all auth responses expose the new fields
-- [ ] T004 Extend the `PUT /api/beds/:id` handler in `backend/src/routes/beds.js` to accept optional `mapRow` and `mapCol` body fields — validate non-negative integers; load owner's `gardenWidth`/`gardenHeight` from User and return 400 if not set; check footprint fits within garden boundary (400); run AABB overlap check against all other placed beds and return 409 if collision; update the document only when all checks pass (depends on T002)
+- [x] T002 [P] Add `gardenWidth: { type: Number, min: 1, default: null }` and `gardenHeight: { type: Number, min: 1, default: null }` fields to the userSchema in `backend/src/models/User.js`
+- [x] T003 [P] Update `userPayload()` in `backend/src/routes/auth.js` to include `gardenWidth: user.gardenWidth ?? null` and `gardenHeight: user.gardenHeight ?? null` so all auth responses expose the new fields
+- [x] T004 Extend the `PUT /api/beds/:id` handler in `backend/src/routes/beds.js` to accept optional `mapRow` and `mapCol` body fields — validate non-negative integers; load owner's `gardenWidth`/`gardenHeight` from User and return 400 if not set; check footprint fits within garden boundary (400); run AABB overlap check against all other placed beds and return 409 if collision; update the document only when all checks pass (depends on T002)
 
 **Checkpoint**: Foundation ready — all user story work can now begin.
 
@@ -51,10 +51,10 @@
 
 ### Implementation for User Story 1
 
-- [ ] T005 [US1] Extend the `PUT /api/auth/me/garden` handler in `backend/src/routes/auth.js` to accept optional `gardenWidth` and `gardenHeight` — validate positive integers (400 on failure); when reducing size, check that no placed bed's footprint `(mapCol + cols > new width || mapRow + rows > new height)` would be clipped (400 `"Garden dimensions are smaller than existing bed placements"`); save and return `userPayload(user)` (depends on T002, T003)
-- [ ] T006 [P] [US1] Write backend tests for `PUT /api/auth/me/garden` dimensions in `backend/src/__tests__/auth.test.js` — cover: happy path sets width/height, fractional value rejected (400), zero rejected (400), negative rejected (400), null clears the field, reducing below a placed bed's bounding box rejected (400) (depends on T005)
-- [ ] T007 [P] [US1] Create `frontend/src/components/GardenDimensionsModal.jsx` — two controlled number inputs (width, height), client-side validation (positive integer required), submit calls `PUT /api/auth/me/garden` via Axios mutation, on success invalidates `['user']` query via `queryClient.invalidateQueries`, passes result to `onSave(width, height)` prop; modal is not dismissible without submitting on first visit
-- [ ] T008 [US1] Update `frontend/src/pages/GardenMap.jsx` to read `user.gardenWidth` and `user.gardenHeight` from `AuthContext`; render `<GardenDimensionsModal>` in place of the grid when either is null; replace the derived `totalCols`/`totalRows` (currently computed from max bed positions) with `user.gardenWidth`/`user.gardenHeight`; show an empty grid with grid-dot background when no beds are placed yet (depends on T007)
+- [x] T005 [US1] Extend the `PUT /api/auth/me/garden` handler in `backend/src/routes/auth.js` to accept optional `gardenWidth` and `gardenHeight` — validate positive integers (400 on failure); when reducing size, check that no placed bed's footprint `(mapCol + cols > new width || mapRow + rows > new height)` would be clipped (400 `"Garden dimensions are smaller than existing bed placements"`); save and return `userPayload(user)` (depends on T002, T003)
+- [x] T006 [P] [US1] Write backend tests for `PUT /api/auth/me/garden` dimensions in `backend/src/__tests__/auth.test.js` — cover: happy path sets width/height, fractional value rejected (400), zero rejected (400), negative rejected (400), null clears the field, reducing below a placed bed's bounding box rejected (400) (depends on T005)
+- [x] T007 [P] [US1] Create `frontend/src/components/GardenDimensionsModal.jsx` — two controlled number inputs (width, height), client-side validation (positive integer required), submit calls `PUT /api/auth/me/garden` via Axios mutation, on success invalidates `['user']` query via `queryClient.invalidateQueries`, passes result to `onSave(width, height)` prop; modal is not dismissible without submitting on first visit
+- [x] T008 [US1] Update `frontend/src/pages/GardenMap.jsx` to read `user.gardenWidth` and `user.gardenHeight` from `AuthContext`; render `<GardenDimensionsModal>` in place of the grid when either is null; replace the derived `totalCols`/`totalRows` (currently computed from max bed positions) with `user.gardenWidth`/`user.gardenHeight`; show an empty grid with grid-dot background when no beds are placed yet (depends on T007)
 
 **Checkpoint**: US1 complete — a new user can configure garden dimensions and see the correct grid. Independently testable.
 
@@ -68,9 +68,9 @@
 
 ### Implementation for User Story 2
 
-- [ ] T009 [P] [US2] Write backend tests for `PUT /api/beds/:id` with `mapRow`/`mapCol` in `backend/src/__tests__/beds.test.js` — cover: happy path positions a bed and returns 200 with updated document; boundary violation returns 400; overlap with another placed bed returns 409; owner without garden dimensions set returns 400; helper role attempting position update returns 403 (depends on T004)
-- [ ] T010 [US2] Add unplaced bed staging area and "+ Add Bed" creation form to `frontend/src/pages/GardenMap.jsx` — add a "+ Add Bed" button (owner-only, hidden for helpers); inline form collects bed name, rows (height in ft), cols (width in ft); on submit calls `POST /api/beds` mutation and invalidates `['beds']`; render unplaced beds (where `mapRow == null || mapCol == null`) as draggable tiles in a staging row below the grid (depends on T008)
-- [ ] T011 [US2] Implement pointer-events drag-and-snap in `frontend/src/pages/GardenMap.jsx` — add `ref` to the grid container for `getBoundingClientRect()`; add `useState` for `dragging: null | { bedId, grabOffsetX, grabOffsetY, liveRow, liveCol, originRow, originCol }`; on `onPointerDown` (beds): record grab offset from bed top-left, call `e.currentTarget.setPointerCapture(e.pointerId)`; on `onPointerMove` (grid container): compute snap col/row from pointer minus grab offset divided by `CELL_PX`, clamp within `[0, gardenWidth - bed.cols]` × `[0, gardenHeight - bed.rows]`, update `dragging.liveRow`/`liveCol`; on `onPointerUp` (grid container): run AABB overlap check against all non-dragging placed beds; if clear call `PUT /api/beds/:id` mutation with `{ mapRow: liveRow, mapCol: liveCol }` and invalidate `['beds']`; if overlap revert to origin; render dragged bed at `liveRow`/`liveCol` from state with reduced opacity; add `style={{ touchAction: 'none' }}` to every draggable bed element (depends on T010, T004)
+- [x] T009 [P] [US2] Write backend tests for `PUT /api/beds/:id` with `mapRow`/`mapCol` in `backend/src/__tests__/beds.test.js` — cover: happy path positions a bed and returns 200 with updated document; boundary violation returns 400; overlap with another placed bed returns 409; owner without garden dimensions set returns 400; helper role attempting position update returns 403 (depends on T004)
+- [x] T010 [US2] Add unplaced bed staging area and "+ Add Bed" creation form to `frontend/src/pages/GardenMap.jsx` — add a "+ Add Bed" button (owner-only, hidden for helpers); inline form collects bed name, rows (height in ft), cols (width in ft); on submit calls `POST /api/beds` mutation and invalidates `['beds']`; render unplaced beds (where `mapRow == null || mapCol == null`) as draggable tiles in a staging row below the grid (depends on T008)
+- [x] T011 [US2] Implement pointer-events drag-and-snap in `frontend/src/pages/GardenMap.jsx` — add `ref` to the grid container for `getBoundingClientRect()`; add `useState` for `dragging: null | { bedId, grabOffsetX, grabOffsetY, liveRow, liveCol, originRow, originCol }`; on `onPointerDown` (beds): record grab offset from bed top-left, call `e.currentTarget.setPointerCapture(e.pointerId)`; on `onPointerMove` (grid container): compute snap col/row from pointer minus grab offset divided by `CELL_PX`, clamp within `[0, gardenWidth - bed.cols]` × `[0, gardenHeight - bed.rows]`, update `dragging.liveRow`/`liveCol`; on `onPointerUp` (grid container): run AABB overlap check against all non-dragging placed beds; if clear call `PUT /api/beds/:id` mutation with `{ mapRow: liveRow, mapCol: liveCol }` and invalidate `['beds']`; if overlap revert to origin; render dragged bed at `liveRow`/`liveCol` from state with reduced opacity; add `style={{ touchAction: 'none' }}` to every draggable bed element (depends on T010, T004)
 
 **Checkpoint**: US2 complete — new beds can be created and dragged onto the grid with snap. Independently testable.
 
@@ -84,8 +84,8 @@
 
 ### Implementation for User Story 3
 
-- [ ] T012 [US3] Apply drag-and-snap handlers to existing placed beds in `frontend/src/pages/GardenMap.jsx` — confirm that placed beds (where `mapRow != null && mapCol != null`) also receive `onPointerDown` with the same drag handler as unplaced staging tiles; add a pointer-distance threshold check (≥ 8 px of movement before activating drag) to distinguish an intentional drag from an accidental tap (depends on T011)
-- [ ] T013 [US3] Resolve click-to-navigate vs drag conflict on placed beds in `frontend/src/pages/GardenMap.jsx` — replace the full-bed `<button onClick={navigate}>` with a small "Open" icon button (e.g., Lucide `ExternalLink` icon) positioned at the top-right corner of each placed bed; the rest of the bed surface handles pointer events for dragging; update the beds legend at the bottom to also navigate on click (depends on T012)
+- [x] T012 [US3] Apply drag-and-snap handlers to existing placed beds in `frontend/src/pages/GardenMap.jsx` — confirm that placed beds (where `mapRow != null && mapCol != null`) also receive `onPointerDown` with the same drag handler as unplaced staging tiles; add a pointer-distance threshold check (≥ 8 px of movement before activating drag) to distinguish an intentional drag from an accidental tap (depends on T011)
+- [x] T013 [US3] Resolve click-to-navigate vs drag conflict on placed beds in `frontend/src/pages/GardenMap.jsx` — replace the full-bed `<button onClick={navigate}>` with a small "Open" icon button (e.g., Lucide `ExternalLink` icon) positioned at the top-right corner of each placed bed; the rest of the bed surface handles pointer events for dragging; update the beds legend at the bottom to also navigate on click (depends on T012)
 
 **Checkpoint**: US3 complete — existing placed beds are repositionable. All three user stories are independently functional.
 
@@ -95,9 +95,9 @@
 
 **Purpose**: Documentation sync, validation, and final quality gate.
 
-- [ ] T014 [P] Update `specs/001-existing-features/contracts/auth.md` — add `gardenWidth: number | null` and `gardenHeight: number | null` to the user object shape at the top of the file to keep the baseline contract in sync
-- [ ] T015 [P] Run the manual validation checklist from `specs/002-garden-map-snap/quickstart.md` — work through all scenarios (US1, US2, US3) and confirm every checklist item passes
-- [ ] T016 Run `npm test` in `backend/` and confirm all tests pass (T006 + T009 new tests included); run `npm run lint` in `frontend/` and confirm zero errors
+- [x] T014 [P] Update `specs/001-existing-features/contracts/auth.md` — add `gardenWidth: number | null` and `gardenHeight: number | null` to the user object shape at the top of the file to keep the baseline contract in sync
+- [x] T015 [P] Run the manual validation checklist from `specs/002-garden-map-snap/quickstart.md` — work through all scenarios (US1, US2, US3) and confirm every checklist item passes
+- [x] T016 Run `npm test` in `backend/` and confirm all tests pass (T006 + T009 new tests included); run `npm run lint` in `frontend/` and confirm zero errors
 
 ---
 

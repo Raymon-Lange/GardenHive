@@ -7,7 +7,8 @@ All responses use JSON. Errors always return `{ error: "message" }`.
 Successful auth responses return `{ token, user }` where `user` is:
 ```json
 { "id": "...", "name": "...", "email": "...", "role": "owner|helper",
-  "gardenName": "...|null", "gardenImage": "/uploads/...|null" }
+  "gardenName": "...|null", "gardenImage": "/uploads/...|null",
+  "gardenWidth": "number|null", "gardenHeight": "number|null" }
 ```
 
 ---

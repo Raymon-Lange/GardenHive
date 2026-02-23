@@ -38,12 +38,14 @@ function signToken(userId) {
 
 function userPayload(user) {
   return {
-    id: user._id,
-    name: user.name,
-    email: user.email,
-    role: user.role || 'owner',
-    gardenName:  user.gardenName  || null,
-    gardenImage: user.gardenImage || null,
+    id:           user._id,
+    name:         user.name,
+    email:        user.email,
+    role:         user.role || 'owner',
+    gardenName:   user.gardenName   || null,
+    gardenImage:  user.gardenImage  || null,
+    gardenWidth:  user.gardenWidth  ?? null,
+    gardenHeight: user.gardenHeight ?? null,
   };
 }
 
@@ -208,13 +210,53 @@ router.delete('/me', requireAuth, async (req, res) => {
   }
 });
 
-// PUT /api/auth/me/garden — update garden name
+// PUT /api/auth/me/garden — update garden name and/or dimensions
 router.put('/me/garden', requireAuth, async (req, res) => {
   try {
-    const { gardenName } = req.body;
+    const { gardenName, gardenWidth, gardenHeight } = req.body;
     const user = await User.findById(req.userId);
     if (!user) return res.status(404).json({ error: 'User not found' });
-    user.gardenName = gardenName ? gardenName.trim() : null;
+
+    if (gardenName !== undefined) {
+      user.gardenName = gardenName ? gardenName.trim() : null;
+    }
+
+    if (gardenWidth !== undefined) {
+      if (gardenWidth !== null && (!Number.isInteger(gardenWidth) || gardenWidth < 1)) {
+        return res.status(400).json({ error: 'gardenWidth must be a positive integer' });
+      }
+      // When reducing, ensure no placed bed's footprint is clipped
+      if (gardenWidth !== null) {
+        const clippedBed = await GardenBed.findOne({
+          userId: req.userId,
+          mapCol: { $ne: null },
+          $expr: { $gt: [{ $add: ['$mapCol', '$cols'] }, gardenWidth] },
+        });
+        if (clippedBed) {
+          return res.status(400).json({ error: 'Garden dimensions are smaller than existing bed placements' });
+        }
+      }
+      user.gardenWidth = gardenWidth;
+    }
+
+    if (gardenHeight !== undefined) {
+      if (gardenHeight !== null && (!Number.isInteger(gardenHeight) || gardenHeight < 1)) {
+        return res.status(400).json({ error: 'gardenHeight must be a positive integer' });
+      }
+      // When reducing, ensure no placed bed's footprint is clipped
+      if (gardenHeight !== null) {
+        const clippedBed = await GardenBed.findOne({
+          userId: req.userId,
+          mapRow: { $ne: null },
+          $expr: { $gt: [{ $add: ['$mapRow', '$rows'] }, gardenHeight] },
+        });
+        if (clippedBed) {
+          return res.status(400).json({ error: 'Garden dimensions are smaller than existing bed placements' });
+        }
+      }
+      user.gardenHeight = gardenHeight;
+    }
+
     await user.save();
     res.json(userPayload(user));
   } catch (err) {
