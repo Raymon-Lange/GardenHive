@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import api from '../lib/api';
 import clsx from 'clsx';
 
 export default function Signup() {
@@ -21,7 +22,24 @@ export default function Signup() {
     setLoading(true);
     try {
       await register(form.name, form.email, form.password, role);
-      navigate('/dashboard');
+      const saved = sessionStorage.getItem('gh_guest_bed');
+      if (saved) {
+        const guestBed = JSON.parse(saved);
+        const { data: newBed } = await api.post('/beds', {
+          name: guestBed.name || 'My Garden Bed',
+          rows: guestBed.rows,
+          cols: guestBed.cols,
+        });
+        if (guestBed.cells.length > 0) {
+          await api.put(`/beds/${newBed._id}/cells`, {
+            cells: guestBed.cells.map((c) => ({ row: c.row, col: c.col, plantId: c.plant._id })),
+          });
+        }
+        sessionStorage.removeItem('gh_guest_bed');
+        navigate(`/beds/${newBed._id}`);
+      } else {
+        navigate('/dashboard');
+      }
     } catch (err) {
       setError(err.response?.data?.error || 'Sign up failed. Please try again.');
     } finally {

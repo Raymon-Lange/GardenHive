@@ -130,7 +130,7 @@ export default function AppLayout({ children }) {
               <p className="text-sm font-bold tracking-tight whitespace-nowrap truncate leading-tight">
                 {currentGardenName}
               </p>
-              <p className="text-garden-300 text-xs mt-0.5 truncate">{user?.name}</p>
+              <p className="text-garden-300 text-xs mt-0.5 truncate">{user?.name ?? 'Guest'}</p>
             </div>
           </div>
           {collapsed && (

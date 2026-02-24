@@ -8,6 +8,41 @@ beforeAll(connectDB);
 afterAll(disconnectDB);
 afterEach(clearDB);
 
+// ── GET /api/plants/public ────────────────────────────────────────────────────
+
+describe('GET /api/plants/public', () => {
+  it('returns 200 with no auth header', async () => {
+    const res = await api().get('/api/plants/public');
+    expect(res.status).toBe(200);
+  });
+
+  it('returns an array of system plants', async () => {
+    await createSystemPlant({ name: 'Basil' });
+    await createSystemPlant({ name: 'Thyme' });
+    const res = await api().get('/api/plants/public');
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body)).toBe(true);
+    expect(res.body.some((p) => p.name === 'Basil')).toBe(true);
+    expect(res.body.some((p) => p.name === 'Thyme')).toBe(true);
+  });
+
+  it('excludes custom plants (ownerId != null)', async () => {
+    const { user } = await createUser();
+    await createSystemPlant({ name: 'System Plant' });
+    await createCustomPlant(user._id, { name: 'Custom Plant' });
+    const res = await api().get('/api/plants/public');
+    expect(res.status).toBe(200);
+    expect(res.body.some((p) => p.name === 'Custom Plant')).toBe(false);
+    expect(res.body.some((p) => p.name === 'System Plant')).toBe(true);
+  });
+
+  it('returns empty array when no system plants exist', async () => {
+    const res = await api().get('/api/plants/public');
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual([]);
+  });
+});
+
 // ── GET /api/plants ───────────────────────────────────────────────────────────
 
 describe('GET /api/plants', () => {
