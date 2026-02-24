@@ -1,17 +1,12 @@
 #!/bin/bash
-# logs.sh — Tail live logs from backend and frontend
-# Requires: multitail (install with: sudo apt install multitail)
-# Falls back to showing backend log if multitail isn't installed
+# logs.sh — Tail live logs from all services (or a specific one)
+# Usage:
+#   ./scripts/logs.sh             — all services
+#   ./scripts/logs.sh backend     — backend only
+#   ./scripts/logs.sh frontend    — frontend only
 
-if command -v multitail &> /dev/null; then
-  multitail -l "tail -f /tmp/gh-backend.log" -l "tail -f /tmp/gh-frontend.log"
-else
-  echo "  Tip: install multitail for split-pane logs: sudo apt install multitail"
-  echo "  Showing backend log (Ctrl+C to exit, then check frontend: tail -f /tmp/gh-frontend.log)"
-  echo ""
-  echo "=== BACKEND ==="
-  tail -f /tmp/gh-backend.log &
-  echo ""
-  echo "=== FRONTEND ==="
-  tail -f /tmp/gh-frontend.log
-fi
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT"
+
+SERVICE=${1:-""}
+docker compose logs -f $SERVICE

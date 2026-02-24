@@ -1,8 +1,9 @@
 #!/bin/bash
-# reset.sh — Full database wipe and re-seed from scratch
+# reset.sh — Wipe all volumes and re-seed from scratch
 # WARNING: Destroys all data
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT"
 
 echo "⚠️  GardenHive — Full database reset"
 echo ""
@@ -13,8 +14,21 @@ if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
 fi
 
 echo ""
-echo "  Wiping and re-seeding..."
-"$ROOT/scripts/seed.sh" --force
+echo "  Stopping services and wiping volumes..."
+docker compose down -v
 
 echo ""
-echo "  ✓ Database reset complete"
+echo "  Starting fresh with seed..."
+SEED_DATA=true docker compose up -d
+
+echo ""
+echo "  Waiting for seed to complete..."
+sleep 5
+docker compose logs backend --tail=30
+
+echo ""
+echo "  Restoring normal startup..."
+docker compose up -d --force-recreate backend
+
+echo ""
+echo "  ✓ Reset complete"

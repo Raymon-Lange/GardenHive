@@ -1,17 +1,24 @@
 #!/bin/bash
-# seed.sh — Run all seed scripts in order (user → plants → beds → harvests)
-# Usage:
-#   ./scripts/seed.sh           — skip if data already exists
-#   ./scripts/seed.sh --force   — wipe and re-seed everything
+# seed.sh — Trigger a database reseed via SEED_DATA env var
+# WARNING: Wipes and re-seeds all data
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-FORCE=${1:-""}
+cd "$ROOT"
 
 echo "🌱 GardenHive — Seeding database..."
 echo ""
 
-cd "$ROOT/backend"
-node src/seed/index.js $FORCE
+echo "  Restarting backend with SEED_DATA=true..."
+SEED_DATA=true docker compose up -d --force-recreate backend
+
+echo ""
+echo "  Waiting for seed to complete..."
+sleep 5
+docker compose logs backend --tail=30
+
+echo ""
+echo "  Restoring normal startup..."
+docker compose up -d --force-recreate backend
 
 echo ""
 echo "  ✓ Seeding complete"

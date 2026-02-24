@@ -1,21 +1,19 @@
 #!/bin/bash
-# rebuild.sh — Kill servers, rebuild frontend, restart everything
+# rebuild.sh — Pull latest images from GHCR and recreate all containers
+set -e
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT"
 
 echo "🔨 GardenHive — Rebuilding..."
-
-# Stop running servers
-"$ROOT/scripts/stop.sh"
-
-# Build frontend
 echo ""
-echo "  Building frontend..."
-cd "$ROOT/frontend"
-npm run build
 
-echo "  ✓ Build complete"
+echo "  Pulling latest images..."
+docker compose pull
 
-# Restart
 echo ""
-"$ROOT/scripts/start.sh"
+echo "  Recreating containers..."
+docker compose up -d --force-recreate
+
+echo ""
+"$ROOT/scripts/status.sh"

@@ -1,22 +1,18 @@
 #!/bin/bash
-# install.sh — Fresh install: install all dependencies for backend and frontend
+# install.sh — Pull all Docker images and verify setup
+set -e
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT"
 
-echo "📦 GardenHive — Installing dependencies..."
+echo "📦 GardenHive — Pulling images..."
+echo ""
+docker compose pull
 
 echo ""
-echo "  [1/2] Backend..."
-cd "$ROOT/backend" && npm install
-
-echo ""
-echo "  [2/2] Frontend..."
-cd "$ROOT/frontend" && npm install
-
-echo ""
-echo "  ✓ All dependencies installed"
+echo "  ✓ Images ready"
 echo ""
 echo "  Next steps:"
-echo "    1. Start MongoDB:  docker run -d --name gardenhive-mongo -p 27017:27017 mongo:7"
-echo "    2. Seed database:  ./scripts/seed.sh"
-echo "    3. Start servers:  ./scripts/start.sh"
+echo "    1. Add certs:   mkdir -p certs && cp /path/to/fullchain.crt certs/ && cp /path/to/privkey.key certs/"
+echo "    2. Set env:     cp .env.example .env  (then edit JWT_SECRET and CORS_ORIGIN)"
+echo "    3. Start:       ./scripts/start.sh"
