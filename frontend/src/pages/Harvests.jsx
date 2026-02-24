@@ -40,7 +40,7 @@ export default function Harvests() {
     plantId: '',
     bedId: '',
     quantity: '',
-    unit: 'lbs',
+    unit: 'oz',
     harvestedAt: todayISO(),
     notes: '',
   });
