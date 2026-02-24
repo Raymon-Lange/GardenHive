@@ -13,7 +13,7 @@ services:
     environment:
       - MONGO_URI=mongodb://mongo:27017/gardenhive
       - JWT_SECRET=${JWT_SECRET}
-      - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost}
+      - CORS_ORIGIN=${CORS_ORIGIN}
       - PORT=5000
       - SEED_DATA=${SEED_DATA:-false}
     volumes:
@@ -28,6 +28,9 @@ services:
     restart: unless-stopped
     ports:
       - "80:80"
+      - "443:443"
+    volumes:
+      - ./certs:/etc/nginx/certs:ro
     depends_on:
       - backend
     networks:
