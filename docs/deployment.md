@@ -1,8 +1,8 @@
 # GardenHive — Production Deployment
 
 This document covers the full production setup for GardenHive on a Proxmox LXC
-container, including domain DNS, SSL via Let's Encrypt, Docker image builds
-(where Tailwind CSS is compiled), and the Docker Compose stack.
+container, including domain DNS, SSL via Let's Encrypt, Tailscale for secure
+remote access, and the Docker Compose stack.
 
 ---
 
@@ -16,6 +16,7 @@ container, including domain DNS, SSL via Let's Encrypt, Docker image builds
 | App runtime | Docker Compose |
 | Database | MongoDB 7 (Docker volume) |
 | SSL | Let's Encrypt (Certbot standalone) |
+| Remote access | Tailscale |
 | Domain | fire-hive.com |
 
 ---
@@ -123,29 +124,49 @@ restarts:
 
 ---
 
-## 4. How Tailwind CSS Is Built
+## 4. Tailscale — Secure Remote Access
 
-Tailwind is not a runtime dependency — it is compiled away at image build time.
+Tailscale is installed on the LXC so you can SSH into the server securely
+without exposing port 22 to the public internet.
 
-The frontend uses a **multi-stage Docker build**:
+### Install Tailscale on the LXC
 
-```
-Stage 1 — builder (node:22-alpine)
-  npm ci                  # install all dependencies including Tailwind
-  npm run build           # Vite builds the app; Tailwind purges unused CSS
-  → output: dist/
-
-Stage 2 — production (nginx:alpine)
-  COPY dist/ → /usr/share/nginx/html
-  COPY nginx.conf → /etc/nginx/conf.d/default.conf
-  → final image has no Node.js, no source files, no dev deps
+```bash
+curl -fsSL https://tailscale.com/install.sh | sh
 ```
 
-The production image is typically 20–30 MB. Tailwind's purge step means only
-the CSS classes actually used in the JSX are included.
+### Authenticate and bring up the node
 
-Images are published to GitHub Container Registry (GHCR) via CI and pulled by
-Docker Compose on the server — no build tooling is needed on the production host.
+```bash
+tailscale up
+# Follow the URL printed in the terminal to authenticate via the Tailscale admin panel
+```
+
+### Verify
+
+```bash
+tailscale status        # shows the node's Tailscale IP (100.x.x.x)
+tailscale ip -4         # print just the IPv4 address
+```
+
+### SSH via Tailscale
+
+Once the node is up, SSH using the Tailscale IP from any device on your Tailnet:
+
+```bash
+ssh deploy@<tailscale-ip>
+```
+
+Port 22 does **not** need to be open on the public firewall — SSH traffic goes
+through the encrypted Tailscale overlay network.
+
+### Auto-start on boot
+
+Tailscale is managed by systemd and starts automatically:
+
+```bash
+systemctl enable --now tailscaled
+```
 
 ---
 
