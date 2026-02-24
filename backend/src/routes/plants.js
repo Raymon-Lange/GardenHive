@@ -13,6 +13,16 @@ const EDITABLE_FIELDS = [
   'perSqFt', 'daysToHarvest', 'daysToGermination', 'spacingIn', 'depthIn',
 ];
 
+// GET /api/plants/public — system plants only, no auth required
+router.get('/public', async (req, res) => {
+  try {
+    const plants = await Plant.find({ ownerId: null }).sort({ name: 1 });
+    res.json(plants);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // GET /api/plants — system plants + the effective owner's custom plants
 // ?showAll=true  → include hidden plants (for admin), adds `hidden` boolean to each
 // ?ownerId=xxx   → use that owner's custom plants (for helpers viewing a shared garden)

@@ -65,9 +65,14 @@ export default function Landing() {
           Plan garden beds on an interactive grid, log every harvest, and watch your season totals grow.
           Calm, earthy, and built for serious home gardeners.
         </p>
-        <Link to="/signup" className="btn-primary text-base px-6 py-3">
-          Start for free <ChevronRight size={18} />
-        </Link>
+        <div className="flex flex-wrap items-center justify-center gap-4">
+          <Link to="/signup" className="btn-primary text-base px-6 py-3">
+            Start for free <ChevronRight size={18} />
+          </Link>
+          <Link to="/planner" className="btn-secondary text-base px-6 py-3">
+            Try free planner
+          </Link>
+        </div>
       </section>
 
       {/* Features */}
