@@ -1,6 +1,8 @@
 # GardenHive
 
-Square foot garden planning & harvest tracking — MERN stack.
+Plan your vegetable garden, track what you grow, and analyse your harvests season over season.
+
+Set up a grid-based garden map, drag beds into position, fill each square foot with a plant from the library, log harvests by weight, and share view or edit access with family or helpers. Export any garden layout to PDF with a built-in shopping list.
 
 ## Stack
 
