@@ -23,6 +23,37 @@ remote access, and the Docker Compose stack.
 
 ## 1. Proxmox LXC Setup
 
+### Finding and accessing the container with `pct`
+
+All `pct` commands run on the **Proxmox host** (not inside the container).
+
+```bash
+# List all containers — find the GardenHive one by name or note the VMID
+pct list
+
+# Example output:
+# VMID  Status   Lock  Name
+# 101   running        gardenhive
+
+# Check container status
+pct status 101
+
+# Enter the container (root shell, no SSH needed)
+pct enter 101
+
+# Start / stop the container
+pct start 101
+pct stop 101
+
+# Reboot the container
+pct reboot 101
+```
+
+Once inside the container (`pct enter 101`) all subsequent commands run as root
+in the Ubuntu environment. Exit back to the Proxmox host with `exit`.
+
+### Create the container
+
 Create an Ubuntu LXC container in Proxmox with:
 
 - **RAM**: 1–2 GB minimum
