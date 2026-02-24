@@ -1,8 +1,9 @@
 # GardenHive — Production Deployment
 
 This document covers the full production setup for GardenHive on a Proxmox LXC
-container, including domain DNS, SSL via Let's Encrypt, Tailscale for secure
-remote access, and the Docker Compose stack.
+container, including domain registration (GoDaddy), DNS and SSL proxy
+(Cloudflare), origin SSL (Let's Encrypt), Tailscale for secure remote access,
+and the Docker Compose stack.
 
 ---
 
@@ -15,7 +16,9 @@ remote access, and the Docker Compose stack.
 | Web server / proxy | nginx (inside Docker frontend image) |
 | App runtime | Docker Compose |
 | Database | MongoDB 7 (Docker volume) |
-| SSL | Let's Encrypt (Certbot standalone) |
+| Domain registrar | GoDaddy |
+| DNS / SSL proxy | Cloudflare (proxied, Full strict) |
+| Origin SSL | Let's Encrypt (Certbot standalone) |
 | Remote access | Tailscale |
 | Domain | fire-hive.com |
 
@@ -87,26 +90,85 @@ usermod -aG docker deploy
 
 ---
 
-## 2. Domain DNS
+## 2. Domain — GoDaddy + Cloudflare
 
-Point both the apex and `www` to the LXC's public IP address:
+### Traffic flow
 
-| Type | Name | Value |
-|---|---|---|
-| A | `fire-hive.com` | `<server-ip>` |
-| A | `www.fire-hive.com` | `<server-ip>` |
+```
+User → Cloudflare (TLS) → origin nginx on LXC (TLS, Let's Encrypt)
+```
 
-Ports **80** and **443** must be reachable from the internet (open in your
-router/firewall if the server is behind NAT, or in your cloud provider's
-security group).
+Cloudflare sits in front of the server. It terminates the user-facing TLS
+connection with its own certificate, then makes a second encrypted connection
+to nginx using the Let's Encrypt cert. This is **Full (strict)** mode —
+Cloudflare validates the origin cert, so a valid cert on the server is required.
+
+### Step 1 — Add the site to Cloudflare
+
+1. Log in to [dash.cloudflare.com](https://dash.cloudflare.com) → **Add a site** → enter `fire-hive.com`
+2. Choose the **Free** plan (or higher)
+3. Cloudflare will scan existing DNS records — review and confirm
+
+### Step 2 — Point GoDaddy nameservers to Cloudflare
+
+Cloudflare will show you two nameservers, e.g.:
+
+```
+aria.ns.cloudflare.com
+bob.ns.cloudflare.com
+```
+
+In GoDaddy:
+
+1. **My Products** → find `fire-hive.com` → **DNS**
+2. Scroll to **Nameservers** → **Change** → **Enter my own nameservers**
+3. Replace the GoDaddy nameservers with the two Cloudflare ones
+4. Save — propagation takes a few minutes to 24 hours
+
+### Step 3 — Add DNS records in Cloudflare
+
+In the Cloudflare dashboard → **DNS** → **Records**:
+
+| Type | Name | Value | Proxy |
+|---|---|---|---|
+| A | `fire-hive.com` | `<server-ip>` | Proxied (orange cloud) |
+| A | `www` | `<server-ip>` | Proxied (orange cloud) |
+
+The orange cloud means traffic flows through Cloudflare — the real server IP
+is hidden and Cloudflare provides DDoS protection and CDN caching.
+
+### Step 4 — Set SSL/TLS mode to Full (strict)
+
+In Cloudflare → **SSL/TLS** → **Overview** → select **Full (strict)**
+
+This tells Cloudflare to validate the Let's Encrypt certificate on the origin
+server. Without a valid cert on nginx, the site will show a 526 error.
+
+### Step 5 — Enable HTTPS redirect
+
+In Cloudflare → **SSL/TLS** → **Edge Certificates** → turn on
+**Always Use HTTPS**
+
+This redirects any `http://` requests to `https://` at the Cloudflare edge
+(nginx also does its own redirect, so this adds a second layer).
 
 ---
 
 ## 3. SSL — Let's Encrypt (Certbot standalone)
 
+The origin server needs a valid SSL certificate because Cloudflare is set to
+**Full (strict)** mode — it validates the cert before forwarding traffic.
+
 Certbot's standalone mode spins up a temporary HTTP server on port 80 to
-complete the ACME challenge. The Docker stack must be **stopped** first so port
-80 is free.
+complete the ACME challenge. Two things must be true first:
+
+1. The Docker stack is **stopped** so port 80 is free
+2. Cloudflare DNS is **active** (nameservers propagated) — Certbot must be able
+   to resolve `fire-hive.com` to the server IP
+
+> **Note:** Temporarily set the A record to **DNS only** (grey cloud) in
+> Cloudflare before running Certbot. Cloudflare proxied mode can interfere with
+> the ACME HTTP-01 challenge. Switch back to proxied after the cert is issued.
 
 ```bash
 # Install Certbot
@@ -281,7 +343,8 @@ curl -I https://fire-hive.com
 # API responding
 curl https://fire-hive.com/api/plants/public | head -c 200
 
-# Certificate expiry
-echo | openssl s_client -connect fire-hive.com:443 2>/dev/null \
+# Certificate expiry — check the origin cert directly (bypasses Cloudflare)
+# The browser will show a Cloudflare cert; this checks the Let's Encrypt cert on nginx
+echo | openssl s_client -connect <server-ip>:443 -servername fire-hive.com 2>/dev/null \
   | openssl x509 -noout -dates
 ```
