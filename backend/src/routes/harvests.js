@@ -125,6 +125,8 @@ router.post('/import', requireAccess('harvests_analytics'), upload.single('file'
       unmatched.push({
         row,
         rawName,
+        date: parsedDate,
+        quantity,
         suggestion: suggestion
           ? { plantId: suggestion.plant._id.toString(), plantName: suggestion.plant.name, plantEmoji: suggestion.plant.emoji }
           : null,

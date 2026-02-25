@@ -88,6 +88,42 @@ describe('POST /api/harvests/import', () => {
     expect(res.body.unmatched).toHaveLength(1);
     expect(res.body.unmatched[0].rawName).toBe('Tomatoe');
     expect(res.body.unmatched[0].suggestion.plantName).toBe('Tomato');
+    expect(res.body.unmatched[0].date).toBeDefined();
+    expect(res.body.unmatched[0].quantity).toBe(8);
+  });
+
+  it('accepts single-digit month M/DD/YYYY', async () => {
+    const { user } = await createUser();
+    await createSystemPlant({ name: 'Tomato', emoji: '🍅' });
+
+    const csv = 'Plant Name,Date,Quantity (oz)\nTomato,2/18/2026,8\n';
+
+    const res = await api()
+      .post('/api/harvests/import')
+      .set('Authorization', `Bearer ${makeToken(user._id)}`)
+      .attach('file', Buffer.from(csv), { filename: 'test.csv', contentType: 'text/csv' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.matched).toHaveLength(1);
+    expect(res.body.errors).toHaveLength(0);
+    expect(res.body.matched[0].date).toBe('2026-02-18T00:00:00.000Z');
+  });
+
+  it('accepts single-digit day MM/D/YY', async () => {
+    const { user } = await createUser();
+    await createSystemPlant({ name: 'Tomato', emoji: '🍅' });
+
+    const csv = 'Plant Name,Date,Quantity (oz)\nTomato,02/2/26,8\n';
+
+    const res = await api()
+      .post('/api/harvests/import')
+      .set('Authorization', `Bearer ${makeToken(user._id)}`)
+      .attach('file', Buffer.from(csv), { filename: 'test.csv', contentType: 'text/csv' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.matched).toHaveLength(1);
+    expect(res.body.errors).toHaveLength(0);
+    expect(res.body.matched[0].date).toBe('2026-02-02T00:00:00.000Z');
   });
 
   it('returns error row for invalid date format (YYYY-MM-DD)', async () => {
