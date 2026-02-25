@@ -16,7 +16,10 @@ import Analytics from './pages/Analytics';
 import BedDetail from './pages/BedDetail';
 import Harvests from './pages/Harvests';
 import Admin from './pages/Admin';
+import SuperAdminDashboard from './pages/SuperAdminDashboard';
+import Forbidden from './pages/Forbidden';
 import Profile from './pages/Profile';
+import AdminRoute from './components/AdminRoute';
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },
@@ -48,6 +51,8 @@ export default function App() {
               <Route path="/analytics" element={<PrivatePage><Analytics /></PrivatePage>} />
               <Route path="/harvests" element={<PrivatePage><Harvests /></PrivatePage>} />
               <Route path="/admin" element={<PrivatePage><Admin /></PrivatePage>} />
+              <Route path="/super-admin" element={<AdminRoute><AppLayout><SuperAdminDashboard /></AppLayout></AdminRoute>} />
+              <Route path="/403" element={<Forbidden />} />
               <Route path="/profile" element={<PrivatePage><Profile /></PrivatePage>} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>

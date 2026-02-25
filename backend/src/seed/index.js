@@ -1,4 +1,4 @@
-const { seedUser }     = require('./user');
+const { seedUser, seedSuperAdmin } = require('./user');
 const { seedPlants }   = require('./plants');
 const { seedBeds }     = require('./beds');
 const { seedHarvests } = require('./harvests');
@@ -6,6 +6,7 @@ const { seedHarvests } = require('./harvests');
 async function seedAll({ force = true } = {}) {
   console.log('--- Seeding database ---');
   await seedUser({ force });
+  await seedSuperAdmin({ force });
   await seedPlants({ force });
   await seedBeds({ force });
   await seedHarvests({ force });
