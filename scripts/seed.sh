@@ -9,16 +9,16 @@ echo "🌱 GardenHive — Seeding database..."
 echo ""
 
 echo "  Restarting backend with SEED_DATA=true..."
-SEED_DATA=true docker compose up -d --force-recreate backend
+SEED_DATA=true docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --force-recreate backend
 
 echo ""
 echo "  Waiting for seed to complete..."
 sleep 5
-docker compose logs backend --tail=30
+docker compose -f docker-compose.yml -f docker-compose.dev.yml logs backend --tail=30
 
 echo ""
 echo "  Restoring normal startup..."
-docker compose up -d --force-recreate backend
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --force-recreate backend
 
 echo ""
 echo "  ✓ Seeding complete"
