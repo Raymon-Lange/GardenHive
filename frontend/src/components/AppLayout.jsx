@@ -218,6 +218,27 @@ export default function AppLayout({ children }) {
             <span className={clsx(collapsed && 'md:hidden')}>Profile</span>
           </NavLink>
 
+          {/* Platform Stats link — super admin only */}
+          {user?.isSuperAdmin && (
+            <NavLink
+              to="/super-admin"
+              title={collapsed ? 'Platform Stats' : undefined}
+              onClick={() => setMobileOpen(false)}
+              className={({ isActive }) =>
+                clsx(
+                  'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+                  isActive
+                    ? 'bg-garden-600 text-white'
+                    : 'text-garden-200 hover:bg-garden-700 hover:text-white',
+                  collapsed && 'md:justify-center md:px-0'
+                )
+              }
+            >
+              <ShieldCheck size={18} />
+              <span className={clsx(collapsed && 'md:hidden')}>Platform Stats</span>
+            </NavLink>
+          )}
+
           {/* Admin link — owner viewing own garden only */}
           {user?.role === 'owner' && isOwnGarden && (
             <NavLink

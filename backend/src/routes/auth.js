@@ -12,6 +12,8 @@ const requireAuth = require('../middleware/auth');
 
 const router = express.Router();
 
+const SUPER_ADMIN_EMAIL = 'raymon.lange@gmail.com';
+
 // ── Multer setup for garden images ───────────────────────────────────────────
 const uploadsDir = path.join(__dirname, '../../uploads');
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
@@ -42,6 +44,7 @@ function userPayload(user) {
     name:         user.name,
     email:        user.email,
     role:         user.role || 'owner',
+    isSuperAdmin: user.email.toLowerCase() === SUPER_ADMIN_EMAIL,
     gardenName:   user.gardenName   || null,
     gardenImage:  user.gardenImage  || null,
     gardenWidth:  user.gardenWidth  ?? null,
@@ -96,6 +99,7 @@ router.post('/login', async (req, res) => {
     if (user.active === false) {
       return res.status(401).json({ error: 'This account has been deactivated' });
     }
+    await User.findByIdAndUpdate(user._id, { lastLoginAt: new Date() });
     const token = signToken(user._id);
     res.json({ token, user: userPayload(user) });
   } catch (err) {

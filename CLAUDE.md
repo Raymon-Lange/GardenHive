@@ -13,6 +13,7 @@ Auto-generated from all feature plans. Last updated: 2026-02-23
 - No new storage — tests use the existing dev MongoDB instance via the live API (005-ui-regression-tests)
 - Node.js 22 (backend CJS) / React 19 (frontend ESM) + Express 5, Mongoose 9, multer (existing), csv-parse v5 (new — backend only) (006-harvest-csv-import)
 - MongoDB 7 — no new collections; existing `Harvest` model covers all fields (006-harvest-csv-import)
+- MongoDB 7 — additive `lastLoginAt: Date` field on User model only; no new collections (007-super-admin-stats)
 
 - Node.js 22 (backend) / JavaScript + React 19 (frontend) + Express 5, Mongoose 9, React Router 7, TanStack React (001-existing-features)
 
@@ -33,9 +34,9 @@ npm test && npm run lint
 Node.js 22 (backend) / JavaScript + React 19 (frontend): Follow standard conventions
 
 ## Recent Changes
+- 007-super-admin-stats: Added Node.js 22 (backend) / JavaScript + React 19 (frontend) + Express 5, Mongoose 9, TanStack React Query 5, React Router 7, Tailwind CSS 3, Lucide React
 - 006-harvest-csv-import: Added Node.js 22 (backend CJS) / React 19 (frontend ESM) + Express 5, Mongoose 9, multer (existing), csv-parse v5 (new — backend only)
 - 005-ui-regression-tests: Added Node.js 22 / JavaScript (ESM) + Playwright 1.x (`@playwright/test`), existing Docker dev stack
-- 004-guest-planner: Added Node.js 22 (backend) / JavaScript + React 19 (frontend) + Express 5, Mongoose 9, TanStack React Query 5, React Router 7, Tailwind CSS 3, Lucide React
 
 
 <!-- MANUAL ADDITIONS START -->
