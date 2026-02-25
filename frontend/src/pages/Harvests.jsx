@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../lib/api';
-import { Plus, Trash2, Leaf } from 'lucide-react';
+import { Plus, Trash2, Leaf, Download, Upload } from 'lucide-react';
+import HarvestImportModal from '../components/HarvestImportModal';
 
 const UNITS = ['lbs', 'oz', 'kg', 'g', 'count'];
 
@@ -35,6 +36,8 @@ export default function Harvests() {
   const { data: plants = [] } = usePlants();
   const { data: beds = [] } = useBeds();
   const { data: harvests = [], isLoading } = useHarvests();
+
+  const [importOpen, setImportOpen] = useState(false);
 
   const [form, setForm] = useState({
     plantId: '',
@@ -81,11 +84,34 @@ export default function Harvests() {
     });
   }
 
+  function handleDownloadTemplate() {
+    api.get('/harvests/template', { responseType: 'blob' }).then((res) => {
+      const url = URL.createObjectURL(res.data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'harvest-template.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+  }
+
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-garden-900">Harvest Log</h1>
-        <p className="text-garden-600 text-sm mt-0.5">Record what you picked from the garden</p>
+      <HarvestImportModal isOpen={importOpen} onClose={() => setImportOpen(false)} />
+
+      <div className="mb-6 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-garden-900">Harvest Log</h1>
+          <p className="text-garden-600 text-sm mt-0.5">Record what you picked from the garden</p>
+        </div>
+        <div className="flex gap-2 shrink-0">
+          <button onClick={handleDownloadTemplate} className="btn-secondary flex items-center gap-1.5 text-sm">
+            <Download size={14} /> Download template
+          </button>
+          <button onClick={() => setImportOpen(true)} className="btn-secondary flex items-center gap-1.5 text-sm">
+            <Upload size={14} /> Import CSV
+          </button>
+        </div>
       </div>
 
       {/* Quick-entry form */}
