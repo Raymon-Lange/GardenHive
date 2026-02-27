@@ -1,22 +1,19 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: (none) → 1.0.0 (initial ratification)
+Version change: 1.0.0 → 1.1.0 (MINOR — Technology Stack section expanded)
 
-Principles added (all new):
-  I.   Layered Separation
-  II.  REST-First API Design
-  III. Permission-Gated Multi-Tenancy
-  IV.  Schema-Validated Data Integrity
-  V.   Server State via React Query / UI State via Context
-  VI.  Test-Before-Deploy
-  VII. Simplicity & YAGNI
-  VIII.Consistent Naming & Code Style
+Principles modified: none
 
-Sections added:
+Sections modified:
   - Technology Stack & Constraints
-  - Development Workflow & Quality Gates
-  - Governance
+      Frontend: added jsPDF 4.x + html2canvas 1.x (PDF generation, feature 008)
+      Backend:  added csv-parse 6.x (CSV import, feature 006)
+                updated multer → v2 (upgraded in b82ae51)
+      Infrastructure: added Playwright 1.x (E2E regression suite, feature 005)
+
+Sections added: none
+Sections removed: none
 
 Templates reviewed:
   ✅ .specify/templates/plan-template.md — "Constitution Check" gate is generic; no update needed
@@ -202,7 +199,8 @@ search, and refactoring predictable.
 - Framework: Express 5
 - ODM: Mongoose 9 + MongoDB 7
 - Auth: `jsonwebtoken` (7-day expiry) + `bcryptjs`
-- File uploads: `multer` (stored in `backend/uploads/`, served as static)
+- File uploads: `multer` v2 (stored in `backend/uploads/`, served as static)
+- CSV import: `csv-parse` 6.x
 - Testing: Jest 29 + Supertest + `mongodb-memory-server`
 
 **Frontend**
@@ -214,10 +212,14 @@ search, and refactoring predictable.
 - CSS: Tailwind CSS 3 + custom utility classes
 - Charts: Recharts
 - Icons: Lucide React
+- PDF generation: jsPDF 4.x + html2canvas 1.x (React DOM → canvas → PDF;
+  no server involvement — browser-only, no new packages beyond these two)
 
 **Infrastructure**
 - Local dev: Docker Compose (MongoDB + backend + frontend)
 - CI/CD: GitHub Actions → Docker images → GHCR → VPS via Tailscale + SSH
+- E2E tests: Playwright 1.x (`@playwright/test`) — run from repo root against
+  the live Docker dev stack; test files under `tests/e2e/`
 - Environment config: `.env` files (never committed); `VITE_` prefix for
   frontend variables consumed by Vite
 
@@ -228,6 +230,9 @@ search, and refactoring predictable.
   `gh_user`. A 401 response MUST trigger automatic logout and redirect to `/login`.
 - The `passwordHash` field MUST be excluded from every API response. Tests MUST
   assert this.
+- PDF generation MUST be performed entirely in the browser (no backend route,
+  no stored files). The pipeline is: render a hidden React portal → capture
+  via html2canvas → encode with jsPDF → trigger browser download.
 
 ## Development Workflow & Quality Gates
 
@@ -278,4 +283,4 @@ unless the amendment explicitly mandates it.
 
 ---
 
-**Version**: 1.0.0 | **Ratified**: 2026-02-23 | **Last Amended**: 2026-02-23
+**Version**: 1.1.0 | **Ratified**: 2026-02-23 | **Last Amended**: 2026-02-27
