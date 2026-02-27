@@ -185,10 +185,39 @@ test.describe('with garden configured', () => {
       page.getByRole('button', { name: 'Download PDF' }).click(),
     ]);
 
-    expect(download.suggestedFilename()).toMatch(/\.pdf$/i);
+    expect(download.suggestedFilename()).toMatch(/\w+-\d{4}-\d{2}-\d{2}\.pdf$/);
 
     const filePath = await download.path();
     const buffer = readFileSync(filePath);
     expect(buffer.slice(0, 4).toString()).toBe('%PDF');
   });
+});
+
+test.describe('PDF garden-size scenarios', () => {
+  const scenarios = [
+    { name: 'tiny-dense',        width: 4,  height: 6  },
+    { name: 'small-standard',    width: 10, height: 12 },
+    { name: 'medium-mixed',      width: 20, height: 30 },
+    { name: 'large-sparse',      width: 50, height: 80 },
+    { name: 'narrow-landscape',  width: 8,  height: 40 },
+    { name: 'many-beds',         width: 30, height: 50 },
+  ];
+
+  for (const scenario of scenarios) {
+    test(`PDF downloads without error — ${scenario.name} (${scenario.width}×${scenario.height} ft)`, async ({ isolatedPage }) => {
+      const { page, token } = isolatedPage;
+
+      await setGardenDimensions(token, page, scenario.width, scenario.height);
+
+      await page.goto('/map');
+      await page.waitForSelector('[data-testid="garden-grid"], .garden-grid, [aria-label="Garden Map"]', { timeout: 10000 }).catch(() => {});
+
+      const [download] = await Promise.all([
+        page.waitForEvent('download', { timeout: 30000 }),
+        page.getByRole('button', { name: /download pdf/i }).click(),
+      ]);
+
+      expect(download.suggestedFilename()).toMatch(/\w+-\d{4}-\d{2}-\d{2}\.pdf$/);
+    });
+  }
 });

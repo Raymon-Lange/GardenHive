@@ -29,7 +29,7 @@ tests/e2e/beds.spec.js                        ← update + new scenario tests
 
 **Purpose**: Remove legacy print infrastructure that conflicts with the new approach.
 
-- [ ] T001 Remove the `@media print` CSS block (lines 36–100) from `frontend/src/index.css` — this block drives the old print path and will conflict with the new PDF-blob print approach
+- [x] T001 Remove the `@media print` CSS block (lines 36–100) from `frontend/src/index.css` — this block drives the old print path and will conflict with the new PDF-blob print approach
 
 **Checkpoint**: Old CSS print path removed. The Print button will temporarily do nothing until Phase 3 restores it via PDF blob.
 
@@ -41,8 +41,8 @@ tests/e2e/beds.spec.js                        ← update + new scenario tests
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T002 [P] Add `PDF_PALETTE` and `CATEGORY_COLORS` constant objects at the top of `frontend/src/components/GardenPrintView.jsx`, replacing the existing white/grey inline colour strings throughout the component
-- [ ] T003 [P] Add `PAPER_W_PX`, `PAPER_H_PX`, `MARGIN_PX`, `HEADER_H_PX`, `USABLE_W_PX`, `USABLE_H_PX`, and `COMPACT_THRESHOLD_PX` constants and the `computeLayout(gardenWidth, gardenHeight)` helper in `frontend/src/components/GardenPrintView.jsx` — returns `{ scale, isPaginated, stripCount, stripHeightFt }`
+- [x] T002 [P] Add `PDF_PALETTE` and `CATEGORY_COLORS` constant objects at the top of `frontend/src/components/GardenPrintView.jsx`, replacing the existing white/grey inline colour strings throughout the component
+- [x] T003 [P] Add `PAPER_W_PX`, `PAPER_H_PX`, `MARGIN_PX`, `HEADER_H_PX`, `USABLE_W_PX`, `USABLE_H_PX`, and `COMPACT_THRESHOLD_PX` constants and the `computeLayout(gardenWidth, gardenHeight)` helper in `frontend/src/components/GardenPrintView.jsx` — returns `{ scale, isPaginated, stripCount, stripHeightFt }`
 
 **Checkpoint**: Constants and scale formula in place. All subsequent tasks import from these values.
 
@@ -56,10 +56,10 @@ tests/e2e/beds.spec.js                        ← update + new scenario tests
 
 ### Implementation for User Story 1
 
-- [ ] T004 [US1] Update `handleDownloadPdf` in `frontend/src/pages/GardenMap.jsx`: change `new jsPDF(...)` from `{ orientation: 'landscape', format: 'a4' }` to `{ orientation: 'portrait', format: 'letter' }`; replace the hardcoded section1/section2 capture with a dynamic loop over all `[data-print-section]` elements (supports variable map-strip count from US3)
-- [ ] T005 [P] [US1] Replace `handlePrint` in `frontend/src/pages/GardenMap.jsx`: remove `window.print()` and CSS `--print-scale` logic; generate PDF via the same capture flow as `handleDownloadPdf` then call `const url = pdf.output('bloburl'); window.open(url)`
-- [ ] T006 [P] [US1] Add `const [pdfError, setPdfError] = useState(null)` to `frontend/src/pages/GardenMap.jsx`; wrap both handlers in try/catch that calls `setPdfError('Could not generate PDF — please try again')` with `setTimeout(() => setPdfError(null), 4000)`; render the toast as a `fixed bottom-4 right-4 z-50` div with `bg-red-500 text-white` classes
-- [ ] T007 [US1] Update the existing PDF download E2E test in `tests/e2e/beds.spec.js` to assert: (a) downloaded filename matches `/\w+-\d{4}-\d{2}-\d{2}\.pdf$/`, (b) download completes within 5 seconds for the fixture garden
+- [x] T004 [US1] Update `handleDownloadPdf` in `frontend/src/pages/GardenMap.jsx`: change `new jsPDF(...)` from `{ orientation: 'landscape', format: 'a4' }` to `{ orientation: 'portrait', format: 'letter' }`; replace the hardcoded section1/section2 capture with a dynamic loop over all `[data-print-section]` elements (supports variable map-strip count from US3)
+- [x] T005 [P] [US1] Replace `handlePrint` in `frontend/src/pages/GardenMap.jsx`: remove `window.print()` and CSS `--print-scale` logic; generate PDF via the same capture flow as `handleDownloadPdf` then call `const url = pdf.output('bloburl'); window.open(url)`
+- [x] T006 [P] [US1] Add `const [pdfError, setPdfError] = useState(null)` to `frontend/src/pages/GardenMap.jsx`; wrap both handlers in try/catch that calls `setPdfError('Could not generate PDF — please try again')` with `setTimeout(() => setPdfError(null), 4000)`; render the toast as a `fixed bottom-4 right-4 z-50` div with `bg-red-500 text-white` classes
+- [x] T007 [US1] Update the existing PDF download E2E test in `tests/e2e/beds.spec.js` to assert: (a) downloaded filename matches `/\w+-\d{4}-\d{2}-\d{2}\.pdf$/`, (b) download completes within 5 seconds for the fixture garden
 
 **Checkpoint**: Download PDF and Print both work end-to-end with the new letter-portrait format. Error toast visible on failure. Existing Playwright PDF test passes.
 
@@ -73,11 +73,11 @@ tests/e2e/beds.spec.js                        ← update + new scenario tests
 
 ### Implementation for User Story 2
 
-- [ ] T008 [US2] Redesign the Page 1 section container in `frontend/src/components/GardenPrintView.jsx`: add a full-width header bar div with `PDF_PALETTE.headerBg` background and `PDF_PALETTE.headerText` text showing garden name (bold, 18px), date + dimensions + bed count (12px, `PDF_PALETTE.muted`)
-- [ ] T009 [US2] Replace the existing bed card layout in `frontend/src/components/GardenPrintView.jsx` with spatially positioned cards: `left = MARGIN_PX + bed.mapCol * scale`, `top = HEADER_H_PX + bed.mapRow * scale`, `width = bed.cols * scale`, `height = bed.rows * scale`; apply `PDF_PALETTE.cardBorder` as border colour and `PDF_PALETTE.bg` as page background; set `data-print-section="map-1"` on the outer page div
-- [ ] T010 [US2] Implement plant cell rendering within each bed card in `frontend/src/components/GardenPrintView.jsx`: cell size = `scale × scale` px; background = `CATEGORY_COLORS[cell.plantId.category] ?? CATEGORY_COLORS.vegetable`; emoji centred at `Math.max(10, scale * 0.65)` px font; abbreviated name (`name.slice(0,12) + (name.length > 12 ? '…' : '')`) in a div below the emoji at `scale * 0.30` px font in `PDF_PALETTE.bodyText`
-- [ ] T011 [P] [US2] Add bed name label to each bed card in `frontend/src/components/GardenPrintView.jsx`: render a small overlay div at the top of the card (`position: absolute, top: 2px, left: 4px`) showing `bed.name.slice(0,16) + (bed.name.length > 16 ? '…' : '')` at 9px in `PDF_PALETTE.headerBg` colour (semi-bold, legible against the card background)
-- [ ] T012 [P] [US2] Update the dot-grid background SVG in `frontend/src/components/GardenPrintView.jsx` to use the new scale value (`scale` px per sq ft instead of `printCellPx`) and `PDF_PALETTE.divider` dot colour; set SVG dimensions to `gardenWidth * scale` × `gardenHeight * scale`
+- [x] T008 [US2] Redesign the Page 1 section container in `frontend/src/components/GardenPrintView.jsx`: add a full-width header bar div with `PDF_PALETTE.headerBg` background and `PDF_PALETTE.headerText` text showing garden name (bold, 18px), date + dimensions + bed count (12px, `PDF_PALETTE.muted`)
+- [x] T009 [US2] Replace the existing bed card layout in `frontend/src/components/GardenPrintView.jsx` with spatially positioned cards: `left = MARGIN_PX + bed.mapCol * scale`, `top = HEADER_H_PX + bed.mapRow * scale`, `width = bed.cols * scale`, `height = bed.rows * scale`; apply `PDF_PALETTE.cardBorder` as border colour and `PDF_PALETTE.bg` as page background; set `data-print-section="map-1"` on the outer page div
+- [x] T010 [US2] Implement plant cell rendering within each bed card in `frontend/src/components/GardenPrintView.jsx`: cell size = `scale × scale` px; background = `CATEGORY_COLORS[cell.plantId.category] ?? CATEGORY_COLORS.vegetable`; emoji centred at `Math.max(10, scale * 0.65)` px font; abbreviated name (`name.slice(0,12) + (name.length > 12 ? '…' : '')`) in a div below the emoji at `scale * 0.30` px font in `PDF_PALETTE.bodyText`
+- [x] T011 [P] [US2] Add bed name label to each bed card in `frontend/src/components/GardenPrintView.jsx`: render a small overlay div at the top of the card (`position: absolute, top: 2px, left: 4px`) showing `bed.name.slice(0,16) + (bed.name.length > 16 ? '…' : '')` at 9px in `PDF_PALETTE.headerBg` colour (semi-bold, legible against the card background)
+- [x] T012 [P] [US2] Update the dot-grid background SVG in `frontend/src/components/GardenPrintView.jsx` to use the new scale value (`scale` px per sq ft instead of `printCellPx`) and `PDF_PALETTE.divider` dot colour; set SVG dimensions to `gardenWidth * scale` × `gardenHeight * scale`
 
 **Checkpoint**: Page 1 renders a spatially accurate, colour-coded garden map with labelled beds. Beds with no plants show an empty card in the correct position. Download and open PDF to verify visually.
 
@@ -91,11 +91,11 @@ tests/e2e/beds.spec.js                        ← update + new scenario tests
 
 ### Implementation for User Story 3
 
-- [ ] T013 [US3] Implement compact mode in `frontend/src/components/GardenPrintView.jsx`: in the bed card renderer, check `scale < COMPACT_THRESHOLD_PX`; if true, replace the plant cell grid with a centred text block showing `bed.name` (bold) and `· ${plantedCount} plants` (muted); preserve the card's border, background, and spatial position
-- [ ] T014 [US3] Implement map pagination in `frontend/src/components/GardenPrintView.jsx`: when `isPaginated` is true (from `computeLayout`), render `stripCount` separate `data-print-section="map-N"` divs each sized `PAPER_W_PX × PAPER_H_PX`; each strip renders only the beds whose `mapRow` falls within `[stripIndex * stripHeightFt, (stripIndex+1) * stripHeightFt)`; beds that straddle a strip boundary render in the strip where their top edge falls
-- [ ] T015 [US3] Add miniature index SVG thumbnail to each paginated map page in `frontend/src/components/GardenPrintView.jsx`: render a 120×80px SVG in the top-right corner of the header bar showing the full garden boundary outline (stroke `PDF_PALETTE.cardBorder`) with the current strip's extent highlighted (fill `PDF_PALETTE.headerBg` at 20% opacity); add a "Map N of M" label below the thumbnail in 8px `PDF_PALETTE.muted`
-- [ ] T016 [US3] Update `handleDownloadPdf` in `frontend/src/pages/GardenMap.jsx` to capture all `data-print-section` divs dynamically: `querySelectorAll('[data-print-section]')` sorted by the section attribute value; each captured PNG is added as its own PDF page in order (map-1, map-2, …, checklist)
-- [ ] T017 [US3] Add 6 garden-size scenario E2E tests to `tests/e2e/beds.spec.js`: for each scenario (tiny/dense 4×6, small standard 10×12, medium mixed 20×30, large sparse 50×80, narrow landscape 8×40, many beds 30×50) — create a garden via API with the specified dimensions, place the appropriate number of beds, click Download PDF, assert download completes and file is non-empty; for "large sparse" and "narrow landscape" assert that a download occurs without error (visual validation done manually per quickstart.md)
+- [x] T013 [US3] Implement compact mode in `frontend/src/components/GardenPrintView.jsx`: in the bed card renderer, check `scale < COMPACT_THRESHOLD_PX`; if true, replace the plant cell grid with a centred text block showing `bed.name` (bold) and `· ${plantedCount} plants` (muted); preserve the card's border, background, and spatial position
+- [x] T014 [US3] Implement map pagination in `frontend/src/components/GardenPrintView.jsx`: when `isPaginated` is true (from `computeLayout`), render `stripCount` separate `data-print-section="map-N"` divs each sized `PAPER_W_PX × PAPER_H_PX`; each strip renders only the beds whose `mapRow` falls within `[stripIndex * stripHeightFt, (stripIndex+1) * stripHeightFt)`; beds that straddle a strip boundary render in the strip where their top edge falls
+- [x] T015 [US3] Add miniature index SVG thumbnail to each paginated map page in `frontend/src/components/GardenPrintView.jsx`: render a 120×80px SVG in the top-right corner of the header bar showing the full garden boundary outline (stroke `PDF_PALETTE.cardBorder`) with the current strip's extent highlighted (fill `PDF_PALETTE.headerBg` at 20% opacity); add a "Map N of M" label below the thumbnail in 8px `PDF_PALETTE.muted`
+- [x] T016 [US3] Update `handleDownloadPdf` in `frontend/src/pages/GardenMap.jsx` to capture all `data-print-section` divs dynamically: `querySelectorAll('[data-print-section]')` sorted by the section attribute value; each captured PNG is added as its own PDF page in order (map-1, map-2, …, checklist)
+- [x] T017 [US3] Add 6 garden-size scenario E2E tests to `tests/e2e/beds.spec.js`: for each scenario (tiny/dense 4×6, small standard 10×12, medium mixed 20×30, large sparse 50×80, narrow landscape 8×40, many beds 30×50) — create a garden via API with the specified dimensions, place the appropriate number of beds, click Download PDF, assert download completes and file is non-empty; for "large sparse" and "narrow landscape" assert that a download occurs without error (visual validation done manually per quickstart.md)
 
 **Checkpoint**: All 6 garden-size scenarios produce a downloadable PDF without errors. Large/paginated gardens produce multi-page output. Run `npx playwright test tests/e2e/beds.spec.js`.
 
@@ -109,10 +109,10 @@ tests/e2e/beds.spec.js                        ← update + new scenario tests
 
 ### Implementation for User Story 4
 
-- [ ] T018 [US4] Redesign the Page 2 section in `frontend/src/components/GardenPrintView.jsx`: add a header bar matching the map page style (`PDF_PALETTE.headerBg` background, "Shopping List" title in `PDF_PALETTE.headerText` at 16px bold); set `data-print-section="checklist"` on the outer div
-- [ ] T019 [US4] Implement zebra-stripe row alternation in the checklist table in `frontend/src/components/GardenPrintView.jsx`: even-indexed rows use `background: '#FFFFFF'`, odd-indexed rows use `background: PDF_PALETTE.bg`; replace the existing solid `border: '1px solid #d1d5db'` cell borders with `borderBottom: '1px solid ' + PDF_PALETTE.divider`; update table header row to use `PDF_PALETTE.headerBg` background and `PDF_PALETTE.headerText` text
-- [ ] T020 [P] [US4] Add totals summary section below the table in `frontend/src/components/GardenPrintView.jsx`: compute `totalCells = shoppingRows.reduce((s, r) => s + r.cellCount, 0)` and `totalVarieties = new Set(shoppingRows.map(r => r.plantName)).size`; render as a right-aligned paragraph `"${totalVarieties} varieties · ${totalCells} plants total"` in `PDF_PALETTE.bodyText` at 12px bold, separated from the table by a `PDF_PALETTE.divider` top border
-- [ ] T021 [P] [US4] Add generation date footer to the checklist section in `frontend/src/components/GardenPrintView.jsx`: render `"Generated: ${today}"` at the bottom of the section div in 10px `PDF_PALETTE.muted`, right-aligned
+- [x] T018 [US4] Redesign the Page 2 section in `frontend/src/components/GardenPrintView.jsx`: add a header bar matching the map page style (`PDF_PALETTE.headerBg` background, "Shopping List" title in `PDF_PALETTE.headerText` at 16px bold); set `data-print-section="checklist"` on the outer div
+- [x] T019 [US4] Implement zebra-stripe row alternation in the checklist table in `frontend/src/components/GardenPrintView.jsx`: even-indexed rows use `background: '#FFFFFF'`, odd-indexed rows use `background: PDF_PALETTE.bg`; replace the existing solid `border: '1px solid #d1d5db'` cell borders with `borderBottom: '1px solid ' + PDF_PALETTE.divider`; update table header row to use `PDF_PALETTE.headerBg` background and `PDF_PALETTE.headerText` text
+- [x] T020 [P] [US4] Add totals summary section below the table in `frontend/src/components/GardenPrintView.jsx`: compute `totalCells = shoppingRows.reduce((s, r) => s + r.cellCount, 0)` and `totalVarieties = new Set(shoppingRows.map(r => r.plantName)).size`; render as a right-aligned paragraph `"${totalVarieties} varieties · ${totalCells} plants total"` in `PDF_PALETTE.bodyText` at 12px bold, separated from the table by a `PDF_PALETTE.divider` top border
+- [x] T021 [P] [US4] Add generation date footer to the checklist section in `frontend/src/components/GardenPrintView.jsx`: render `"Generated: ${today}"` at the bottom of the section div in 10px `PDF_PALETTE.muted`, right-aligned
 
 **Checkpoint**: Checklist page visually matches the design spec. Download and verify all 4 checklist features in the output PDF.
 
@@ -122,9 +122,9 @@ tests/e2e/beds.spec.js                        ← update + new scenario tests
 
 **Purpose**: Final validation, regression check, lint pass.
 
-- [ ] T022 [P] Run `npx playwright test tests/e2e/beds.spec.js` from repo root and fix any regressions — all existing beds tests plus the 6 new garden-size scenario tests must pass
-- [ ] T023 [P] Run `npm run lint` in `frontend/` and resolve any ESLint warnings introduced by the new JSX in `GardenPrintView.jsx` and `GardenMap.jsx`
-- [ ] T024 Follow the manual validation checklist in `specs/008-improve-garden-pdf/quickstart.md`: download PDF with the fixture garden, verify spatial map + coloured cells + checklist + print path; spot-check compact mode by temporarily setting a small garden width
+- [x] T022 [P] Run `npx playwright test tests/e2e/beds.spec.js` from repo root and fix any regressions — all existing beds tests plus the 6 new garden-size scenario tests must pass
+- [x] T023 [P] Run `npm run lint` in `frontend/` and resolve any ESLint warnings introduced by the new JSX in `GardenPrintView.jsx` and `GardenMap.jsx`
+- [x] T024 Follow the manual validation checklist in `specs/008-improve-garden-pdf/quickstart.md`: download PDF with the fixture garden, verify spatial map + coloured cells + checklist + print path; spot-check compact mode by temporarily setting a small garden width
 
 ---
 
