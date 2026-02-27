@@ -8,7 +8,7 @@ import AppLayout from './components/AppLayout';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
-import GuestPlanner from './pages/GuestPlanner';
+import StandardGuestPlanner from './pages/StandardGuestPlanner';
 import Dashboard from './pages/Dashboard';
 import GardenBeds from './pages/GardenBeds';
 import GardenMap from './pages/GardenMap';
@@ -43,7 +43,7 @@ export default function App() {
               <Route path="/" element={<Landing />} />
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
-              <Route path="/planner" element={<GuestPlanner />} />
+              <Route path="/planner" element={<StandardGuestPlanner />} />
               <Route path="/dashboard" element={<PrivatePage><Dashboard /></PrivatePage>} />
               <Route path="/beds" element={<PrivatePage><GardenBeds /></PrivatePage>} />
               <Route path="/beds/:id" element={<PrivatePage><BedDetail /></PrivatePage>} />

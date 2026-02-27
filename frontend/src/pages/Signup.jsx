@@ -22,21 +22,31 @@ export default function Signup() {
     setLoading(true);
     try {
       await register(form.name, form.email, form.password, role);
-      const saved = sessionStorage.getItem('gh_guest_bed');
+      const saved = localStorage.getItem('gh_guest_garden');
       if (saved) {
-        const guestBed = JSON.parse(saved);
-        const { data: newBed } = await api.post('/beds', {
-          name: guestBed.name || 'My Garden Bed',
-          rows: guestBed.rows,
-          cols: guestBed.cols,
+        const guestGarden = JSON.parse(saved);
+        await api.put('/auth/me/garden', {
+          gardenWidth:  guestGarden.gardenWidth,
+          gardenHeight: guestGarden.gardenHeight,
         });
-        if (guestBed.cells.length > 0) {
-          await api.put(`/beds/${newBed._id}/cells`, {
-            cells: guestBed.cells.map((c) => ({ row: c.row, col: c.col, plantId: c.plant._id })),
+        for (const guestBed of guestGarden.beds) {
+          const { data: newBed } = await api.post('/beds', {
+            name: guestBed.name,
+            rows: guestBed.rows,
+            cols: guestBed.cols,
           });
+          await api.put(`/beds/${newBed._id}`, {
+            mapRow: guestBed.mapRow,
+            mapCol: guestBed.mapCol,
+          });
+          if (guestBed.cells.length > 0) {
+            await api.put(`/beds/${newBed._id}/cells`, {
+              cells: guestBed.cells.map((c) => ({ row: c.row, col: c.col, plantId: c.plant._id })),
+            });
+          }
         }
-        sessionStorage.removeItem('gh_guest_bed');
-        navigate(`/beds/${newBed._id}`);
+        localStorage.removeItem('gh_guest_garden');
+        navigate('/map');
       } else {
         navigate('/dashboard');
       }
