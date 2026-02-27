@@ -38,28 +38,24 @@ function computeLayout(gardenWidth, gardenHeight) {
 }
 
 function deriveShoppingRows(beds) {
-  return beds
-    .slice()
-    .sort((a, b) => a.name.localeCompare(b.name))
-    .flatMap((bed) => {
-      const groups = {};
-      bed.cells?.forEach((cell) => {
-        if (!cell.plantId) return;
-        const key = String(cell.plantId._id);
-        if (!groups[key]) {
-          groups[key] = {
-            bedName:    bed.name,
-            plantEmoji: cell.plantId.emoji || '🌿',
-            plantName:  cell.plantId.name,
-            cellCount:  0,
-          };
-        }
-        groups[key].cellCount++;
-      });
-      return Object.values(groups)
-        .filter((g) => g.cellCount > 0)
-        .sort((a, b) => a.plantName.localeCompare(b.plantName));
+  const groups = {};
+  beds.forEach((bed) => {
+    bed.cells?.forEach((cell) => {
+      if (!cell.plantId) return;
+      const key = String(cell.plantId._id);
+      if (!groups[key]) {
+        groups[key] = {
+          plantEmoji: cell.plantId.emoji || '🌿',
+          plantName:  cell.plantId.name,
+          cellCount:  0,
+        };
+      }
+      groups[key].cellCount++;
     });
+  });
+  return Object.values(groups)
+    .filter((g) => g.cellCount > 0)
+    .sort((a, b) => a.plantName.localeCompare(b.plantName));
 }
 
 function abbreviate(str, max) {
@@ -237,9 +233,7 @@ function MapStrip({ beds, gardenWidth, gardenHeight, scale, stripIndex, stripHei
                         const col  = i % bed.cols;
                         const cell = bed.cells?.find((c) => c.row === row && c.col === col);
                         const plant = cell?.plantId;
-                        const categoryColor = plant
-                          ? (CATEGORY_COLORS[plant.category] ?? CATEGORY_COLORS.vegetable)
-                          : 'transparent';
+                        const categoryColor = plant ? '#FFFFFF' : 'transparent';
                         const shortName = plant ? abbreviate(plant.name, 12) : '';
 
                         return (
@@ -261,11 +255,12 @@ function MapStrip({ beds, gardenWidth, gardenHeight, scale, stripIndex, stripHei
                             }}
                           >
                             {plant && (
-                              <>
+                              <div style={{ marginTop: -(emojiFontPx / 2) }}>
                                 <div style={{
                                   fontSize:   emojiFontPx,
                                   lineHeight: 1,
                                   fontFamily: "'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif",
+                                  textAlign:  'center',
                                 }}>
                                   {plant.emoji || '🌿'}
                                 </div>
@@ -281,7 +276,7 @@ function MapStrip({ beds, gardenWidth, gardenHeight, scale, stripIndex, stripHei
                                 }}>
                                   {shortName}
                                 </div>
-                              </>
+                              </div>
                             )}
                           </div>
                         );
@@ -337,7 +332,7 @@ function ChecklistPage({ beds }) {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
               <thead>
                 <tr style={{ background: PDF_PALETTE.headerBg }}>
-                  {['Bed', 'Plant', 'Qty', '☐ Seed', '☐ Starts', '☐ Purchased'].map((h) => (
+                  {['Plant', 'Qty', '☐ Seed', '☐ Starts', '☐ Purchased'].map((h) => (
                     <th
                       key={h}
                       style={{
@@ -356,9 +351,6 @@ function ChecklistPage({ beds }) {
               <tbody>
                 {shoppingRows.map((row, i) => (
                   <tr key={i} style={{ background: i % 2 === 0 ? '#FFFFFF' : PDF_PALETTE.bg }}>
-                    <td style={{ borderBottom: `1px solid ${PDF_PALETTE.divider}`, padding: '5px 8px', color: PDF_PALETTE.bodyText }}>
-                      {row.bedName}
-                    </td>
                     <td style={{ borderBottom: `1px solid ${PDF_PALETTE.divider}`, padding: '5px 8px', color: PDF_PALETTE.bodyText }}>
                       <span style={{ fontFamily: "'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif", fontSize: 14 }}>
                         {row.plantEmoji}
