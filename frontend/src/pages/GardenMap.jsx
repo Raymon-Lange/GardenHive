@@ -51,6 +51,7 @@ export default function GardenMap() {
   // PDF / print refs and state
   const printViewRef = useRef(null);
   const [isPdfLoading, setIsPdfLoading] = useState(false);
+  const [pdfError, setPdfError] = useState(null);
 
   // Drag state
   const [dragging, setDragging] = useState(null);
@@ -176,46 +177,39 @@ export default function GardenMap() {
         import('jspdf'),
         import('html2canvas'),
       ]);
-      const printScale = Math.min(1, 794 / ((gardenWidth ?? 1) * CELL_PX));
-      printViewRef.current.style.setProperty('--print-scale', printScale);
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'letter' });
+      const sections = Array.from(
+        printViewRef.current.querySelectorAll('[data-print-section]')
+      ).sort((a, b) => a.dataset.printSection.localeCompare(b.dataset.printSection));
 
-      const section1 = printViewRef.current.querySelector('[data-print-section="1"]');
-      const section2 = printViewRef.current.querySelector('[data-print-section="2"]');
-
-      const canvas1 = await html2canvas(section1, { scale: 2, useCORS: true, logging: false });
-      const canvas2 = await html2canvas(section2, { scale: 2, useCORS: true, logging: false });
-
-      const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-      const PAGE_W = pdf.internal.pageSize.getWidth();
-      const PAGE_H = pdf.internal.pageSize.getHeight();
-
-      // Page 1: garden grid
-      const img1 = canvas1.toDataURL('image/png');
-      const h1 = (canvas1.height * PAGE_W) / canvas1.width;
-      pdf.addImage(img1, 'PNG', 0, 0, PAGE_W, Math.min(h1, PAGE_H));
-
-      // Page 2+: shopping list (tile canvas2 across pages if needed)
-      pdf.addPage();
-      const totalH2 = (canvas2.height * PAGE_W) / canvas2.width;
-      if (totalH2 <= PAGE_H) {
-        pdf.addImage(canvas2.toDataURL('image/png'), 'PNG', 0, 0, PAGE_W, totalH2);
-      } else {
-        const sliceHeightPx = Math.floor((PAGE_H / totalH2) * canvas2.height);
-        let offsetPx = 0;
-        let firstPage = true;
-        while (offsetPx < canvas2.height) {
-          if (!firstPage) pdf.addPage();
-          firstPage = false;
-          const chunkPx = Math.min(sliceHeightPx, canvas2.height - offsetPx);
-          const chunkCanvas = document.createElement('canvas');
-          chunkCanvas.width = canvas2.width;
-          chunkCanvas.height = chunkPx;
-          chunkCanvas.getContext('2d').drawImage(
-            canvas2, 0, offsetPx, canvas2.width, chunkPx, 0, 0, canvas2.width, chunkPx
-          );
-          const chunkH = (chunkPx * PAGE_W) / canvas2.width;
-          pdf.addImage(chunkCanvas.toDataURL('image/png'), 'PNG', 0, 0, PAGE_W, chunkH);
-          offsetPx += chunkPx;
+      let firstPage = true;
+      for (const section of sections) {
+        const canvas = await html2canvas(section, { scale: 2, useCORS: true, logging: false });
+        const imgData = canvas.toDataURL('image/png');
+        const PAGE_W = pdf.internal.pageSize.getWidth();
+        const PAGE_H = pdf.internal.pageSize.getHeight();
+        const imgH = (canvas.height * PAGE_W) / canvas.width;
+        if (!firstPage) pdf.addPage();
+        firstPage = false;
+        if (imgH <= PAGE_H) {
+          pdf.addImage(imgData, 'PNG', 0, 0, PAGE_W, imgH);
+        } else {
+          // tile tall sections across pages
+          const slicePx = Math.floor((PAGE_H / imgH) * canvas.height);
+          let offsetPx = 0;
+          let firstSlice = true;
+          while (offsetPx < canvas.height) {
+            if (!firstSlice) pdf.addPage();
+            firstSlice = false;
+            const chunkPx = Math.min(slicePx, canvas.height - offsetPx);
+            const chunk = document.createElement('canvas');
+            chunk.width = canvas.width;
+            chunk.height = chunkPx;
+            chunk.getContext('2d').drawImage(canvas, 0, offsetPx, canvas.width, chunkPx, 0, 0, canvas.width, chunkPx);
+            const chunkH = (chunkPx * PAGE_W) / canvas.width;
+            pdf.addImage(chunk.toDataURL('image/png'), 'PNG', 0, 0, PAGE_W, chunkH);
+            offsetPx += chunkPx;
+          }
         }
       }
 
@@ -225,19 +219,44 @@ export default function GardenMap() {
         .replace(/[^a-z0-9-]/g, '');
       const dateStr = new Date().toISOString().split('T')[0];
       pdf.save(`${slug}-${dateStr}.pdf`);
+    } catch {
+      setPdfError('Could not generate PDF — please try again');
+      setTimeout(() => setPdfError(null), 4000);
     } finally {
       setIsPdfLoading(false);
     }
   }
 
-  function handlePrint() {
-    if (!printViewRef.current) return;
-    const printScale = Math.min(1, 794 / ((gardenWidth ?? 1) * CELL_PX));
-    printViewRef.current.style.setProperty('--print-scale', printScale);
-    const original = document.title;
-    document.title = `${user?.gardenName || 'Garden'} - ${new Date().toISOString().split('T')[0]}`;
-    window.print();
-    window.addEventListener('afterprint', () => { document.title = original; }, { once: true });
+  async function handlePrint() {
+    setIsPdfLoading(true);
+    try {
+      const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([
+        import('jspdf'),
+        import('html2canvas'),
+      ]);
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'letter' });
+      const sections = Array.from(
+        printViewRef.current.querySelectorAll('[data-print-section]')
+      ).sort((a, b) => a.dataset.printSection.localeCompare(b.dataset.printSection));
+      let firstPage = true;
+      for (const section of sections) {
+        const canvas = await html2canvas(section, { scale: 2, useCORS: true, logging: false });
+        const imgData = canvas.toDataURL('image/png');
+        const PAGE_W = pdf.internal.pageSize.getWidth();
+        const PAGE_H = pdf.internal.pageSize.getHeight();
+        const imgH = (canvas.height * PAGE_W) / canvas.width;
+        if (!firstPage) pdf.addPage();
+        firstPage = false;
+        pdf.addImage(imgData, 'PNG', 0, 0, PAGE_W, Math.min(imgH, PAGE_H));
+      }
+      const url = pdf.output('bloburl');
+      window.open(url);
+    } catch {
+      setPdfError('Could not generate PDF — please try again');
+      setTimeout(() => setPdfError(null), 4000);
+    } finally {
+      setIsPdfLoading(false);
+    }
   }
 
   // ── Add Bed form ─────────────────────────────────────────────────────────────
@@ -550,6 +569,11 @@ export default function GardenMap() {
         gardenHeight={gardenHeight}
         gardenName={user?.gardenName}
       />
+      {pdfError && (
+        <div className="fixed bottom-4 right-4 z-50 bg-red-500 text-white px-4 py-2 rounded shadow-lg text-sm">
+          {pdfError}
+        </div>
+      )}
     </div>
   );
 }
