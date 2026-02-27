@@ -38,9 +38,9 @@ npm test && npm run lint
 Node.js 22 (backend) / JavaScript + React 19 (frontend): Follow standard conventions
 
 ## Recent Changes
+- 010-remove-cell-labels: Added JavaScript + React 19 (frontend only — no backend changes) + jsPDF 4.2.0 + html2canvas 1.4.1 (already installed — no changes)
 - 009-simplify-pdf-layout: Added JavaScript + React 19 (frontend only — no backend changes) + jsPDF 4.2.0 + html2canvas 1.4.1 (already installed — no changes)
 - 008-improve-garden-pdf: Added JavaScript + React 19 (frontend only — no backend changes) + jsPDF 4.2.0 + html2canvas 1.4.1 (both already installed — no new packages needed)
-- 007-super-admin-stats: Added Node.js 22 (backend) / JavaScript + React 19 (frontend) + Express 5, Mongoose 9, TanStack React Query 5, React Router 7, Tailwind CSS 3, Lucide React
 
 
 <!-- MANUAL ADDITIONS START -->

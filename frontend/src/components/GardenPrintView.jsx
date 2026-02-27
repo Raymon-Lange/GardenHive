@@ -146,7 +146,6 @@ function MapStrip({ beds, gardenWidth, gardenHeight, scale, stripIndex, stripHei
             const h          = bed.rows * scale;
             const isCompact  = compact;
             const emojiFontPx = Math.max(10, scale * 0.65);
-            const labelFontPx = Math.max(6, scale * 0.30);
 
             const plantedCells = bed.cells?.filter(c => c.plantId) || [];
 
@@ -234,7 +233,6 @@ function MapStrip({ beds, gardenWidth, gardenHeight, scale, stripIndex, stripHei
                         const cell = bed.cells?.find((c) => c.row === row && c.col === col);
                         const plant = cell?.plantId;
                         const categoryColor = plant ? '#FFFFFF' : 'transparent';
-                        const shortName = plant ? abbreviate(plant.name, 12) : '';
 
                         return (
                           <div
@@ -255,27 +253,14 @@ function MapStrip({ beds, gardenWidth, gardenHeight, scale, stripIndex, stripHei
                             }}
                           >
                             {plant && (
-                              <div style={{ marginTop: -(emojiFontPx / 2) }}>
-                                <div style={{
-                                  fontSize:   emojiFontPx,
-                                  lineHeight: 1,
-                                  fontFamily: "'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif",
-                                  textAlign:  'center',
-                                }}>
-                                  {plant.emoji || '🌿'}
-                                </div>
-                                <div style={{
-                                  fontSize:   labelFontPx,
-                                  lineHeight: 1,
-                                  color:      PDF_PALETTE.bodyText,
-                                  textAlign:  'center',
-                                  maxWidth:   scale - 2,
-                                  overflow:   'hidden',
-                                  textOverflow: 'ellipsis',
-                                  whiteSpace: 'nowrap',
-                                }}>
-                                  {shortName}
-                                </div>
+                              <div style={{
+                                fontSize:   emojiFontPx,
+                                lineHeight: 1,
+                                fontFamily: "'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif",
+                                textAlign:  'center',
+                                marginTop:  -(emojiFontPx / 2),
+                              }}>
+                                {plant.emoji || '🌿'}
                               </div>
                             )}
                           </div>
