@@ -22,7 +22,10 @@ function buildTransport() {
 const transport = buildTransport();
 
 const logger = pino(
-  { level: isTest ? 'silent' : 'info' },
+  {
+    level: isTest ? 'silent' : 'info',
+    redact: { paths: ['req.headers.authorization'], censor: '[Redacted]' },
+  },
   transport ? pino.transport(transport) : undefined
 );
 
