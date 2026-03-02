@@ -284,7 +284,10 @@ export default function GardenMap() {
           <h1 className="text-2xl font-bold text-garden-900 mb-2">Garden Map</h1>
           <p className="text-garden-500">Set up your garden size to get started.</p>
         </div>
-        <GardenDimensionsModal onSave={(w, h) => updateUser({ gardenWidth: w, gardenHeight: h })} />
+        <GardenDimensionsModal
+          onSave={(w, h) => updateUser({ gardenWidth: w, gardenHeight: h })}
+          onClose={() => navigate(-1)}
+        />
       </>
     );
   }

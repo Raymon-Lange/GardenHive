@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Ruler } from 'lucide-react';
+import { Ruler, X } from 'lucide-react';
 import api from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 
-export default function GardenDimensionsModal({ onSave }) {
+export default function GardenDimensionsModal({ onSave, onClose }) {
   const queryClient = useQueryClient();
   const { updateUser } = useAuth();
   const [form, setForm] = useState({ width: '', height: '' });
@@ -43,9 +43,16 @@ export default function GardenDimensionsModal({ onSave }) {
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
       <div className="card p-8 w-full max-w-md">
-        <div className="flex items-center gap-3 mb-2">
-          <Ruler size={22} className="text-garden-600" />
-          <h2 className="text-xl font-bold text-garden-900">Set your garden size</h2>
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-3">
+            <Ruler size={22} className="text-garden-600" />
+            <h2 className="text-xl font-bold text-garden-900">Set your garden size</h2>
+          </div>
+          {onClose && (
+            <button onClick={onClose} className="text-garden-400 hover:text-garden-700 transition-colors" aria-label="Close">
+              <X size={20} />
+            </button>
+          )}
         </div>
         <p className="text-garden-600 text-sm mb-6">
           Enter the total size of your garden in feet — including beds, paths, and walkways.
