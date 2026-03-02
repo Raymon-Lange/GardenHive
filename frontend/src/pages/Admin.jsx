@@ -211,6 +211,8 @@ export default function Admin() {
   const [gardenNameLoading, setGardenNameLoading] = useState(false);
   const [imageError, setImageError] = useState('');
   const [imageLoading, setImageLoading] = useState(false);
+  const [recordByBedLoading, setRecordByBedLoading] = useState(false);
+  const [recordByBedSaved,   setRecordByBedSaved]   = useState(false);
 
   // Access tab state
   const [inviteForm, setInviteForm] = useState({ email: '', permission: 'analytics' });
@@ -335,6 +337,18 @@ export default function Admin() {
       setGardenNameError(err.response?.data?.error ?? 'Failed to save');
     } finally {
       setGardenNameLoading(false);
+    }
+  }
+
+  async function handleToggleRecordByBed(value) {
+    setRecordByBedSaved(false);
+    setRecordByBedLoading(true);
+    try {
+      const { data } = await api.put('/auth/me/garden', { recordByBed: value });
+      updateUser({ recordByBed: data.recordByBed });
+      setRecordByBedSaved(true);
+    } finally {
+      setRecordByBedLoading(false);
     }
   }
 
@@ -654,6 +668,36 @@ export default function Admin() {
               />
             </label>
             <p className="text-xs text-garden-500 mt-2">JPG, PNG, GIF or WebP · max 5 MB</p>
+          </div>
+
+          {/* Harvest tracking */}
+          <div className="card p-5">
+            <h2 className="font-semibold text-garden-900 mb-1">Harvest tracking</h2>
+            <p className="text-sm text-garden-500 mb-4">
+              When enabled, harvests can be linked to a specific garden bed.
+            </p>
+            <label className="flex items-center gap-3 cursor-pointer">
+              <button
+                type="button"
+                role="switch"
+                aria-checked={!!user?.recordByBed}
+                disabled={recordByBedLoading}
+                onClick={() => handleToggleRecordByBed(!user?.recordByBed)}
+                className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-garden-600 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${
+                  user?.recordByBed ? 'bg-garden-600' : 'bg-garden-200'
+                }`}
+              >
+                <span
+                  className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-sm ring-0 transition-transform duration-200 ${
+                    user?.recordByBed ? 'translate-x-5' : 'translate-x-0'
+                  }`}
+                />
+              </button>
+              <span className="text-sm font-medium text-garden-900">Record harvests by bed</span>
+            </label>
+            {recordByBedSaved && (
+              <p className="text-sm text-garden-600 mt-2">Saved</p>
+            )}
           </div>
 
         </div>

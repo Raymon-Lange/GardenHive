@@ -14,6 +14,7 @@ const userSchema = new mongoose.Schema(
     gardenWidth:  { type: Number, min: 1, default: null },
     gardenHeight: { type: Number, min: 1, default: null },
     lastLoginAt:  { type: Date, default: null },
+    recordByBed:  { type: Boolean, default: false },
   },
   { timestamps: true }
 );

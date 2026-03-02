@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../lib/api';
 import { Plus, Trash2, Leaf, Download, Upload } from 'lucide-react';
 import HarvestImportModal from '../components/HarvestImportModal';
+import { useAuth } from '../context/AuthContext';
 
 const UNITS = ['lbs', 'oz', 'kg', 'g', 'count'];
 
@@ -33,6 +34,7 @@ function todayISO() {
 
 export default function Harvests() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const { data: plants = [] } = usePlants();
   const { data: beds = [] } = useBeds();
   const { data: harvests = [], isLoading } = useHarvests();
@@ -143,21 +145,23 @@ export default function Harvests() {
               </select>
             </div>
 
-            <div>
-              <label className="label">Garden bed (optional)</label>
-              <select
-                className="input"
-                value={form.bedId}
-                onChange={(e) => setForm((f) => ({ ...f, bedId: e.target.value }))}
-              >
-                <option value="">No specific bed</option>
-                {beds.map((b) => (
-                  <option key={b._id} value={b._id}>
-                    {b.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {user?.recordByBed && (
+              <div>
+                <label className="label">Garden bed (optional)</label>
+                <select
+                  className="input"
+                  value={form.bedId}
+                  onChange={(e) => setForm((f) => ({ ...f, bedId: e.target.value }))}
+                >
+                  <option value="">No specific bed</option>
+                  {beds.map((b) => (
+                    <option key={b._id} value={b._id}>
+                      {b.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             <div>
               <label className="label">Date</label>

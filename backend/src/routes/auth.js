@@ -49,6 +49,7 @@ function userPayload(user) {
     gardenImage:  user.gardenImage  || null,
     gardenWidth:  user.gardenWidth  ?? null,
     gardenHeight: user.gardenHeight ?? null,
+    recordByBed:  user.recordByBed  ?? false,
   };
 }
 
@@ -217,7 +218,7 @@ router.delete('/me', requireAuth, async (req, res) => {
 // PUT /api/auth/me/garden — update garden name and/or dimensions
 router.put('/me/garden', requireAuth, async (req, res) => {
   try {
-    const { gardenName, gardenWidth, gardenHeight } = req.body;
+    const { gardenName, gardenWidth, gardenHeight, recordByBed } = req.body;
     const user = await User.findById(req.userId);
     if (!user) return res.status(404).json({ error: 'User not found' });
 
@@ -259,6 +260,10 @@ router.put('/me/garden', requireAuth, async (req, res) => {
         }
       }
       user.gardenHeight = gardenHeight;
+    }
+
+    if (recordByBed !== undefined) {
+      user.recordByBed = Boolean(recordByBed);
     }
 
     await user.save();
