@@ -348,3 +348,124 @@ curl https://fire-hive.com/api/plants/public | head -c 200
 echo | openssl s_client -connect <server-ip>:443 -servername fire-hive.com 2>/dev/null \
   | openssl x509 -noout -dates
 ```
+
+---
+
+## 9. Logs & Monitoring
+
+GardenHive uses **Better Stack (Logtail)** for structured log ingestion and
+**Sentry** for crash alerting. Both are opt-in via environment variables — the
+app runs without them in local dev and CI.
+
+### Architecture
+
+| Concern | Tool | Where |
+|---|---|---|
+| Structured request + event logs | Pino + Better Stack | Backend (Node) |
+| Frontend crash alerts | Sentry | React (browser) |
+| Backend crash / unhandled errors | Sentry | Node (Express) |
+
+Logs flow: `pino-http` logs every HTTP request → `@logtail/pino` ships each
+log line to Better Stack over HTTPS. In parallel, stdout is preserved so
+`docker compose logs` still works.
+
+In test (`NODE_ENV=test`) the logger is set to `level: silent` — no logs
+are emitted and no external connections are attempted.
+
+---
+
+### Better Stack setup
+
+1. Sign in at [betterstack.com](https://betterstack.com) → **Logs** →
+   **Sources** → **New source** → choose **Node.js**
+2. Better Stack creates the source and shows a **Source token** on the source
+   detail page (a string beginning with `lt_`)
+3. Add the token to the VPS `.env`:
+
+```
+LOGTAIL_TOKEN=lt_xxxxxxxxxxxxxxxxxxxxxxxx
+```
+
+4. Redeploy: `docker compose pull && docker compose up -d`
+5. Log in to the app → the Better Stack **Live tail** view should show
+   `action: user.login` within a few seconds
+
+**Logged events:**
+
+| action | Trigger |
+|---|---|
+| `user.login` | Successful login |
+| `user.login_failed` | Wrong email or password |
+| `user.login_blocked` | Login attempt on deactivated account |
+| `user.register` | New account created |
+| `user.password_changed` | Password updated |
+| `user.deleted` | Account deleted or deactivated |
+| `access.granted` | Garden access invite sent |
+| `access.permission_changed` | Access permission updated |
+| `access.revoked` | Access revoked |
+| `bed.created` | Garden bed created |
+| `bed.deleted` | Garden bed deleted |
+| `harvest.created` | Single harvest logged |
+| `harvest.bulk_imported` | CSV harvest import confirmed |
+| `harvest.deleted` | Harvest record deleted |
+
+Every HTTP request is also logged automatically by `pino-http` (method, URL,
+status code, response time).
+
+---
+
+### Sentry setup
+
+Two separate Sentry projects are needed — one for the Node backend, one for
+the React frontend.
+
+#### Backend
+
+1. [sentry.io](https://sentry.io) → **New Project** → **Node.js** → copy the DSN
+2. Add to VPS `.env`:
+
+```
+SENTRY_DSN=https://xxxxxx@oxxxxxx.ingest.sentry.io/xxxxxxx
+```
+
+3. Add `SENTRY_DSN` as a **GitHub secret** so it reaches the container on
+   every deploy automatically (GitHub → repo Settings → Secrets → Actions →
+   New secret: `SENTRY_DSN`)
+4. Redeploy to apply
+
+#### Frontend
+
+The frontend DSN is baked into the static build at image build time by Vite.
+
+1. sentry.io → **New Project** → **React** → copy the DSN (different DSN from
+   the backend project)
+2. Add as a **GitHub secret**: `VITE_SENTRY_DSN=https://...`
+3. The CI workflow (`deploy.yml`) passes it as a Docker build arg automatically:
+
+```yaml
+build-args: |
+  VITE_SENTRY_DSN=${{ secrets.VITE_SENTRY_DSN }}
+```
+
+4. Push a commit to trigger a deploy — the next frontend image will have the
+   DSN embedded
+
+#### Verify Sentry is receiving events
+
+- **Backend**: SSH in → `docker compose logs backend` — on startup Sentry
+  logs a confirmation line. Alternatively, throw a test error and check the
+  Sentry dashboard.
+- **Frontend**: Open DevTools console → `Sentry.captureMessage('test')` →
+  should appear in the Sentry issues list within seconds.
+
+---
+
+### Environment variable summary
+
+All three vars are optional. The app degrades gracefully when they are absent.
+
+| Variable | Where set | Effect when absent |
+|---|---|---|
+| `LOGTAIL_TOKEN` | VPS `.env` | Logs to stdout only (no Better Stack) |
+| `SENTRY_DSN` | VPS `.env` + GitHub secret | No backend error reporting |
+| `VITE_SENTRY_DSN` | GitHub secret | No frontend error reporting |
