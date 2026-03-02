@@ -421,17 +421,88 @@ the React frontend.
 
 #### Backend
 
-1. [sentry.io](https://sentry.io) → **New Project** → **Node.js** → copy the DSN
-2. Add to VPS `.env`:
+**Step 1 — Create the Sentry project**
+
+1. Sign in at [sentry.io](https://sentry.io)
+2. **Projects** → **Create Project** → select **Node.js**
+3. Name it `gardenhive-backend` → **Create Project**
+4. Sentry shows a setup page — scroll to the DSN. It looks like:
+   ```
+   https://xxxxxxxxxxxxxxxxxxxxxx@oxxxxxxx.ingest.sentry.io/xxxxxxx
+   ```
+   Copy it.
+
+**Step 2 — Add the DSN to the VPS**
+
+SSH in and edit `.env`:
+
+```bash
+ssh deploy@<tailscale-ip>
+cd /home/deploy/gardenhive
+nano .env
+```
+
+Add:
 
 ```
-SENTRY_DSN=https://xxxxxx@oxxxxxx.ingest.sentry.io/xxxxxxx
+SENTRY_DSN=https://xxxxxxxxxxxxxxxxxxxxxx@oxxxxxxx.ingest.sentry.io/xxxxxxx
 ```
 
-3. Add `SENTRY_DSN` as a **GitHub secret** so it reaches the container on
-   every deploy automatically (GitHub → repo Settings → Secrets → Actions →
-   New secret: `SENTRY_DSN`)
-4. Redeploy to apply
+**Step 3 — Add as a GitHub secret**
+
+So every CI deploy automatically passes it into the container:
+
+1. GitHub → your repo → **Settings** → **Secrets and variables** → **Actions**
+2. **New repository secret**
+3. Name: `SENTRY_DSN`, Value: the DSN string
+4. Save
+
+> The `deploy.yml` does not need changes — `SENTRY_DSN` is already in the
+> `docker-compose.yml` backend environment block as `${SENTRY_DSN:-}`. As long
+> as the VPS `.env` has the value, the running container will pick it up on
+> `docker compose up -d`.
+
+**Step 4 — Redeploy**
+
+```bash
+docker compose pull
+docker compose up -d
+```
+
+**Step 5 — Verify**
+
+Check the backend container started cleanly:
+
+```bash
+docker compose logs backend | head -20
+```
+
+You should see a Pino log line (JSON or pretty-printed) — no Sentry error means
+the DSN was accepted.
+
+To confirm Sentry is actually receiving events, trigger the health endpoint and
+then intentionally cause a 500 (or just wait for a real error in production).
+You can also run a one-off test from inside the container:
+
+```bash
+docker compose exec backend node -e "
+  require('dotenv').config();
+  const Sentry = require('@sentry/node');
+  Sentry.init({ dsn: process.env.SENTRY_DSN });
+  Sentry.captureMessage('Sentry connectivity test');
+  setTimeout(() => console.log('done'), 2000);
+"
+```
+
+Then check the Sentry dashboard → **Issues** — the message should appear within
+a few seconds.
+
+**What Sentry captures on the backend:**
+
+- Unhandled exceptions in any Express route (via `setupExpressErrorHandler`)
+- Any error that propagates past all route `try/catch` blocks
+- Does **not** capture handled errors that return 4xx responses — those are
+  intentional and logged by Pino instead
 
 #### Frontend
 
