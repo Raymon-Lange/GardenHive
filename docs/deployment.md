@@ -353,17 +353,14 @@ echo | openssl s_client -connect <server-ip>:443 -servername fire-hive.com 2>/de
 
 ## 9. Logs & Monitoring
 
-GardenHive uses **Better Stack (Logtail)** for structured log ingestion and
-**Sentry** for crash alerting. Both are opt-in via environment variables — the
-app runs without them in local dev and CI.
+GardenHive uses **Better Stack (Logtail)** for structured log ingestion. It is
+opt-in via an environment variable — the app runs without it in local dev and CI.
 
 ### Architecture
 
 | Concern | Tool | Where |
 |---|---|---|
 | Structured request + event logs | Pino + Better Stack | Backend (Node) |
-| Frontend crash alerts | Sentry | React (browser) |
-| Backend crash / unhandled errors | Sentry | Node (Express) |
 
 Logs flow: `pino-http` logs every HTTP request → `@logtail/pino` ships each
 log line to Better Stack over HTTPS. In parallel, stdout is preserved so
@@ -414,129 +411,11 @@ status code, response time).
 
 ---
 
-### Sentry setup
-
-Two separate Sentry projects are needed — one for the Node backend, one for
-the React frontend.
-
-#### Backend
-
-**Step 1 — Create the Sentry project**
-
-1. Sign in at [sentry.io](https://sentry.io)
-2. **Projects** → **Create Project** → select **Node.js**
-3. Name it `gardenhive-backend` → **Create Project**
-4. Sentry shows a setup page — scroll to the DSN. It looks like:
-   ```
-   https://xxxxxxxxxxxxxxxxxxxxxx@oxxxxxxx.ingest.sentry.io/xxxxxxx
-   ```
-   Copy it.
-
-**Step 2 — Add the DSN to the VPS**
-
-SSH in and edit `.env`:
-
-```bash
-ssh deploy@<tailscale-ip>
-cd /home/deploy/gardenhive
-nano .env
-```
-
-Add:
-
-```
-SENTRY_DSN=https://xxxxxxxxxxxxxxxxxxxxxx@oxxxxxxx.ingest.sentry.io/xxxxxxx
-```
-
-**Step 3 — Add as a GitHub secret**
-
-So every CI deploy automatically passes it into the container:
-
-1. GitHub → your repo → **Settings** → **Secrets and variables** → **Actions**
-2. **New repository secret**
-3. Name: `SENTRY_DSN`, Value: the DSN string
-4. Save
-
-> The `deploy.yml` does not need changes — `SENTRY_DSN` is already in the
-> `docker-compose.yml` backend environment block as `${SENTRY_DSN:-}`. As long
-> as the VPS `.env` has the value, the running container will pick it up on
-> `docker compose up -d`.
-
-**Step 4 — Redeploy**
-
-```bash
-docker compose pull
-docker compose up -d
-```
-
-**Step 5 — Verify**
-
-Check the backend container started cleanly:
-
-```bash
-docker compose logs backend | head -20
-```
-
-You should see a Pino log line (JSON or pretty-printed) — no Sentry error means
-the DSN was accepted.
-
-To confirm Sentry is actually receiving events, trigger the health endpoint and
-then intentionally cause a 500 (or just wait for a real error in production).
-You can also run a one-off test from inside the container:
-
-```bash
-docker compose exec backend node -e "
-  require('dotenv').config();
-  const Sentry = require('@sentry/node');
-  Sentry.init({ dsn: process.env.SENTRY_DSN });
-  Sentry.captureMessage('Sentry connectivity test');
-  setTimeout(() => console.log('done'), 2000);
-"
-```
-
-Then check the Sentry dashboard → **Issues** — the message should appear within
-a few seconds.
-
-**What Sentry captures on the backend:**
-
-- Unhandled exceptions in any Express route (via `setupExpressErrorHandler`)
-- Any error that propagates past all route `try/catch` blocks
-- Does **not** capture handled errors that return 4xx responses — those are
-  intentional and logged by Pino instead
-
-#### Frontend
-
-The frontend DSN is baked into the static build at image build time by Vite.
-
-1. sentry.io → **New Project** → **React** → copy the DSN (different DSN from
-   the backend project)
-2. Add as a **GitHub secret**: `VITE_SENTRY_DSN=https://...`
-3. The CI workflow (`deploy.yml`) passes it as a Docker build arg automatically:
-
-```yaml
-build-args: |
-  VITE_SENTRY_DSN=${{ secrets.VITE_SENTRY_DSN }}
-```
-
-4. Push a commit to trigger a deploy — the next frontend image will have the
-   DSN embedded
-
-#### Verify Sentry is receiving events
-
-- **Backend**: SSH in → `docker compose logs backend` — on startup Sentry
-  logs a confirmation line. Alternatively, throw a test error and check the
-  Sentry dashboard.
-- **Frontend**: Open DevTools console → `Sentry.captureMessage('test')` →
-  should appear in the Sentry issues list within seconds.
-
----
-
 ### Environment variable summary
 
-All three vars are optional. The app degrades gracefully when they are absent.
+`LOGTAIL_TOKEN` is optional. The app degrades gracefully when it is absent
+(logs go to stdout only).
 
 | Variable | Where set | Effect when absent |
 |---|---|---|
 | `LOGTAIL_TOKEN` | VPS `.env` | Logs to stdout only (no Better Stack) |
-| `SENTRY_DSN` | VPS `.env` + GitHub secret | No backend error reporting |
-| `VITE_SENTRY_DSN` | GitHub secret | No frontend error reporting |
