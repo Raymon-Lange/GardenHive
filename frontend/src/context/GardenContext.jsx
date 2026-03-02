@@ -10,10 +10,11 @@ export function GardenProvider({ children }) {
   const queryClient = useQueryClient();
   const [activeGarden, setActiveGardenState] = useState(null); // null = own garden
   const [sharedGardens, setSharedGardens] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!!user);
 
   useEffect(() => {
-    if (!user) { setLoading(false); return; }
+    if (!user) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     api.get('/access/shared')
       .then((r) => {
@@ -51,6 +52,7 @@ export function GardenProvider({ children }) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useGarden() {
   const ctx = useContext(GardenContext);
   if (!ctx) throw new Error('useGarden must be used within GardenProvider');

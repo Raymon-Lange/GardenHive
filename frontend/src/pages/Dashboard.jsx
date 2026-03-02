@@ -341,6 +341,3 @@ function greeting() {
   return 'evening';
 }
 
-function formatQty(n) {
-  return Number.isInteger(n) ? n : n.toFixed(1);
-}

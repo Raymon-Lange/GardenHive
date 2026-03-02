@@ -223,11 +223,6 @@ export default function Admin() {
   const [plantError, setPlantError] = useState('');
   const [deleteError, setDeleteError] = useState('');
 
-  // Redirect if not owner viewing own garden
-  if (user?.role !== 'owner' || !isOwnGarden) {
-    return <Navigate to="/dashboard" replace />;
-  }
-
   // ── Access queries / mutations ──────────────────────────────────────────────
   const { data: grants = [], isLoading: accessLoading } = useQuery({
     queryKey: ['access'],
@@ -296,6 +291,11 @@ export default function Admin() {
     onSuccess: () => { invalidatePlants(); setDeleteError(''); },
     onError: (err) => setDeleteError(err.response?.data?.error || 'Failed to delete plant'),
   });
+
+  // Redirect if not owner viewing own garden
+  if (user?.role !== 'owner' || !isOwnGarden) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   function handlePlantSave(body) {
     if (editingPlant?._id) {

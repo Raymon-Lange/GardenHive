@@ -143,9 +143,6 @@ export default function Analytics() {
 
   // ── Chart 1: Year-over-year ──────────────────────────────────────────────
   const yoyDataKey = (yr) => unit === 'lbs' ? `${yr}_oz` : `${yr}_count`;
-  const yoyFormatter = (val, yr) =>
-    unit === 'lbs' ? `${ozToLbs(val)} lbs` : `${val} logs`;
-
   // ── Chart 2: By plant (bar) ──────────────────────────────────────────────
   const barData = useMemo(() => {
     const grouped = {};
