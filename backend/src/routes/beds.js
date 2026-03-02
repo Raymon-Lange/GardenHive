@@ -2,6 +2,7 @@ const express = require('express');
 const GardenBed = require('../models/GardenBed');
 const User = require('../models/User');
 const { requireAccess } = require('../middleware/auth');
+const logger = require('../lib/logger');
 
 const router = express.Router();
 
@@ -48,6 +49,7 @@ router.post('/', requireAccess('full'), async (req, res) => {
       cols: Math.min(cols, 50),
       cells: [],
     });
+    logger.info({ action: 'bed.created', userId: req.userId, bedId: bed._id, name: bed.name }, 'Bed created');
     res.status(201).json(bed);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -151,6 +153,7 @@ router.delete('/:id', requireAccess('full'), async (req, res) => {
     }
     const bed = await GardenBed.findOneAndDelete({ _id: req.params.id, userId: req.gardenOwnerId });
     if (!bed) return res.status(404).json({ error: 'Garden bed not found' });
+    logger.info({ action: 'bed.deleted', userId: req.userId, bedId: req.params.id }, 'Bed deleted');
     res.json({ message: 'Garden bed deleted' });
   } catch (err) {
     res.status(500).json({ error: err.message });

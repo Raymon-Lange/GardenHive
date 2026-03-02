@@ -6,6 +6,7 @@ const Harvest = require('../models/Harvest');
 const Plant = require('../models/Plant');
 const { requireAccess } = require('../middleware/auth');
 const { findClosestPlant } = require('../utils/fuzzyMatch');
+const logger = require('../lib/logger');
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 1_000_000 } });
 
@@ -171,6 +172,7 @@ router.post('/bulk', requireAccess('harvests_analytics'), async (req, res) => {
     }));
 
     const harvests = await Harvest.insertMany(docs);
+    logger.info({ action: 'harvest.bulk_imported', userId: req.userId, count: harvests.length }, 'Harvests bulk imported');
     res.status(201).json({ imported: harvests.length, harvests });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -400,6 +402,7 @@ router.post('/', requireAccess('harvests_analytics'), async (req, res) => {
     await harvest.populate('plantId', 'name emoji category');
     await harvest.populate('bedId', 'name');
     await harvest.populate('loggedById', 'name');
+    logger.info({ action: 'harvest.created', userId: req.userId, plantId: harvest.plantId, quantity: harvest.quantity, unit: harvest.unit }, 'Harvest logged');
     res.status(201).json(harvest);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -411,6 +414,7 @@ router.delete('/:id', requireAccess('harvests_analytics'), async (req, res) => {
   try {
     const harvest = await Harvest.findOneAndDelete({ _id: req.params.id, userId: req.gardenOwnerId });
     if (!harvest) return res.status(404).json({ error: 'Harvest not found' });
+    logger.info({ action: 'harvest.deleted', userId: req.userId, harvestId: req.params.id }, 'Harvest deleted');
     res.json({ message: 'Harvest deleted' });
   } catch (err) {
     res.status(500).json({ error: err.message });

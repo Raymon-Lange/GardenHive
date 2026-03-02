@@ -16,6 +16,9 @@ services:
       - CORS_ORIGIN=${CORS_ORIGIN}
       - PORT=5000
       - SEED_DATA=${SEED_DATA:-false}
+      - NODE_ENV=production
+      - LOGTAIL_TOKEN=${LOGTAIL_TOKEN:-}
+      - SENTRY_DSN=${SENTRY_DSN:-}
     volumes:
       - uploads_data:/app/uploads
     depends_on:

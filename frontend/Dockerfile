@@ -8,6 +8,8 @@ RUN npm ci
 
 COPY . .
 ENV VITE_API_URL=/api
+ARG VITE_SENTRY_DSN
+ENV VITE_SENTRY_DSN=$VITE_SENTRY_DSN
 RUN npm run build
 
 # ---- Production stage ----

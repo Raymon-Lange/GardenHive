@@ -2,6 +2,14 @@ require('dotenv').config();
 const path = require('path');
 const express = require('express');
 const cors = require('cors');
+const Sentry = require('@sentry/node');
+const pinoHttp = require('pino-http');
+const logger = require('./lib/logger');
+
+Sentry.init({
+  dsn: process.env.SENTRY_DSN,
+  environment: process.env.NODE_ENV || 'production',
+});
 
 const authRoutes     = require('./routes/auth');
 const bedsRoutes     = require('./routes/beds');
@@ -14,6 +22,7 @@ const app = express();
 
 app.use(cors({ origin: process.env.CORS_ORIGIN || 'http://localhost:5173', credentials: true }));
 app.use(express.json());
+app.use(pinoHttp({ logger }));
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 app.use('/api/auth',     authRoutes);
@@ -24,5 +33,7 @@ app.use('/api/access',   accessRoutes);
 app.use('/api/admin',    adminRoutes);
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
+
+Sentry.setupExpressErrorHandler(app);
 
 module.exports = app;

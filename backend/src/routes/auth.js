@@ -9,6 +9,7 @@ const GardenAccess = require('../models/GardenAccess');
 const GardenBed = require('../models/GardenBed');
 const Harvest = require('../models/Harvest');
 const requireAuth = require('../middleware/auth');
+const logger = require('../lib/logger');
 
 const router = express.Router();
 
@@ -80,6 +81,7 @@ router.post('/register', async (req, res) => {
     );
 
     const token = signToken(user._id);
+    logger.info({ action: 'user.register', userId: user._id, email: user.email, role }, 'User registered');
     res.status(201).json({ token, user: userPayload(user) });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -95,13 +97,16 @@ router.post('/login', async (req, res) => {
     }
     const user = await User.findOne({ email });
     if (!user || !(await user.comparePassword(password))) {
+      logger.warn({ action: 'user.login_failed', email }, 'Login failed');
       return res.status(401).json({ error: 'Invalid email or password' });
     }
     if (user.active === false) {
+      logger.warn({ action: 'user.login_blocked', email }, 'Login blocked — inactive account');
       return res.status(401).json({ error: 'This account has been deactivated' });
     }
     await User.findByIdAndUpdate(user._id, { lastLoginAt: new Date() });
     const token = signToken(user._id);
+    logger.info({ action: 'user.login', userId: user._id, email: user.email, role: user.role }, 'User logged in');
     res.json({ token, user: userPayload(user) });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -176,6 +181,7 @@ router.put('/me/password', requireAuth, async (req, res) => {
     }
     user.passwordHash = await bcrypt.hash(newPassword, 12);
     await user.save();
+    logger.info({ action: 'user.password_changed', userId: req.userId }, 'Password changed');
     res.json({ message: 'Password updated' });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -209,6 +215,7 @@ router.delete('/me', requireAuth, async (req, res) => {
       await user.save();
     }
 
+    logger.info({ action: 'user.deleted', userId: req.userId, role: user.role }, 'Account deleted');
     res.json({ message: 'Account deleted' });
   } catch (err) {
     res.status(500).json({ error: err.message });

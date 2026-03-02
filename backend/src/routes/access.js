@@ -2,6 +2,7 @@ const express = require('express');
 const requireAuth = require('../middleware/auth');
 const GardenAccess = require('../models/GardenAccess');
 const User = require('../models/User');
+const logger = require('../lib/logger');
 
 const router = express.Router();
 
@@ -69,6 +70,7 @@ router.post('/', requireAuth, async (req, res) => {
       status:       grantee ? 'active' : 'pending',
     });
 
+    logger.info({ action: 'access.granted', ownerId: req.userId, granteeEmail: email, permission, status: grant.status }, 'Garden access granted');
     res.status(201).json(grant);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -88,6 +90,7 @@ router.put('/:id', requireAuth, async (req, res) => {
       { new: true }
     );
     if (!grant) return res.status(404).json({ error: 'Grant not found' });
+    logger.info({ action: 'access.permission_changed', ownerId: req.userId, grantId: grant._id, permission }, 'Access permission updated');
     res.json(grant);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -99,6 +102,7 @@ router.delete('/:id', requireAuth, async (req, res) => {
   try {
     const grant = await GardenAccess.findOneAndDelete({ _id: req.params.id, ownerId: req.userId });
     if (!grant) return res.status(404).json({ error: 'Grant not found' });
+    logger.info({ action: 'access.revoked', ownerId: req.userId, grantId: grant._id }, 'Garden access revoked');
     res.json({ message: 'Access revoked' });
   } catch (err) {
     res.status(500).json({ error: err.message });

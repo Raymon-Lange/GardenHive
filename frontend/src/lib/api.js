@@ -1,4 +1,5 @@
 import axios from 'axios';
+import * as Sentry from '@sentry/react';
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
@@ -22,6 +23,8 @@ api.interceptors.response.use(
       localStorage.removeItem('gh_token');
       localStorage.removeItem('gh_user');
       window.location.href = '/login';
+    } else {
+      Sentry.captureException(err);
     }
     return Promise.reject(err);
   }
