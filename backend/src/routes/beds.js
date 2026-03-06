@@ -1,6 +1,6 @@
 const express = require('express');
 const GardenBed = require('../models/GardenBed');
-const User = require('../models/User');
+const Garden = require('../models/Garden');
 const { requireAccess } = require('../middleware/auth');
 const logger = require('../lib/logger');
 
@@ -9,7 +9,9 @@ const router = express.Router();
 // GET /api/beds
 router.get('/', requireAccess('full'), async (req, res) => {
   try {
-    const beds = await GardenBed.find({ userId: req.gardenOwnerId })
+    const { gardenId } = req.query;
+    if (!gardenId) return res.status(400).json({ error: 'gardenId is required' });
+    const beds = await GardenBed.find({ userId: req.gardenOwnerId, gardenId })
       .populate('cells.plantId', 'name emoji category')
       .sort({ createdAt: -1 });
     res.json(beds);
@@ -38,12 +40,14 @@ router.post('/', requireAccess('full'), async (req, res) => {
     if (req.gardenPermission !== 'owner') {
       return res.status(403).json({ error: 'Only the garden owner can create beds' });
     }
-    const { name, rows, cols } = req.body;
+    const { name, rows, cols, gardenId } = req.body;
+    if (!gardenId) return res.status(400).json({ error: 'gardenId is required' });
     if (!name || !rows || !cols) {
       return res.status(400).json({ error: 'name, rows, and cols are required' });
     }
     const bed = await GardenBed.create({
       userId: req.gardenOwnerId,
+      gardenId,
       name,
       rows: Math.min(rows, 50),
       cols: Math.min(cols, 50),
@@ -76,19 +80,19 @@ router.put('/:id', requireAccess('full'), async (req, res) => {
       }
 
       // Garden dimensions must be set before placing
-      const owner = await User.findById(req.gardenOwnerId);
-      if (!owner || owner.gardenWidth == null || owner.gardenHeight == null) {
+      const garden = await Garden.findById(bed.gardenId);
+      if (!garden || garden.gardenWidth == null || garden.gardenHeight == null) {
         return res.status(400).json({ error: 'Garden dimensions not set — configure garden size before placing beds' });
       }
 
       // Boundary check
-      if (mapCol + bed.cols > owner.gardenWidth || mapRow + bed.rows > owner.gardenHeight) {
+      if (mapCol + bed.cols > garden.gardenWidth || mapRow + bed.rows > garden.gardenHeight) {
         return res.status(400).json({ error: 'Bed position is outside the garden boundary' });
       }
 
-      // AABB overlap check against all other placed beds
+      // AABB overlap check against all other placed beds in the same garden
       const otherBeds = await GardenBed.find({
-        userId: req.gardenOwnerId,
+        gardenId: bed.gardenId,
         _id: { $ne: bed._id },
         mapRow: { $ne: null },
         mapCol: { $ne: null },

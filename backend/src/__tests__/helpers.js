@@ -10,6 +10,7 @@ const app = require('../app');
 const User = require('../models/User');
 const Plant = require('../models/Plant');
 const GardenBed = require('../models/GardenBed');
+const Garden = require('../models/Garden');
 const Harvest = require('../models/Harvest');
 const GardenAccess = require('../models/GardenAccess');
 
@@ -81,9 +82,23 @@ async function createCustomPlant(ownerId, overrides = {}) {
   });
 }
 
-async function createBed(userId, overrides = {}) {
+async function createGarden(userId, overrides = {}) {
+  const garden = await Garden.create({
+    userId,
+    name: 'Test Garden',
+    gardenWidth: null,
+    gardenHeight: null,
+    ...overrides,
+  });
+  // Set as active garden on the user
+  await User.findByIdAndUpdate(userId, { activeGardenId: garden._id });
+  return garden;
+}
+
+async function createBed(userId, gardenId, overrides = {}) {
   return GardenBed.create({
     userId,
+    gardenId,
     name: 'Test Bed',
     rows: 3,
     cols: 3,
@@ -130,6 +145,7 @@ module.exports = {
   createHelper,
   createSystemPlant,
   createCustomPlant,
+  createGarden,
   createBed,
   createHarvest,
   createGrant,

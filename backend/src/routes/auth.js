@@ -5,6 +5,7 @@ const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
 const User = require('../models/User');
+const Garden = require('../models/Garden');
 const GardenAccess = require('../models/GardenAccess');
 const GardenBed = require('../models/GardenBed');
 const Harvest = require('../models/Harvest');
@@ -39,18 +40,24 @@ function signToken(userId) {
   return jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '7d' });
 }
 
-function userPayload(user) {
+async function userPayload(user) {
+  // Populate active garden dimensions/name if the user has one
+  let activeGarden = null;
+  if (user.activeGardenId) {
+    activeGarden = await Garden.findById(user.activeGardenId).lean();
+  }
   return {
-    id:           user._id,
-    name:         user.name,
-    email:        user.email,
-    role:         user.role || 'owner',
-    isSuperAdmin: user.email.toLowerCase() === SUPER_ADMIN_EMAIL,
-    gardenName:   user.gardenName   || null,
-    gardenImage:  user.gardenImage  || null,
-    gardenWidth:  user.gardenWidth  ?? null,
-    gardenHeight: user.gardenHeight ?? null,
-    recordByBed:  user.recordByBed  ?? false,
+    id:              user._id,
+    name:            user.name,
+    email:           user.email,
+    role:            user.role || 'owner',
+    isSuperAdmin:    user.email.toLowerCase() === SUPER_ADMIN_EMAIL,
+    gardenName:      activeGarden?.name      ?? user.gardenName   ?? null,
+    gardenImage:     user.gardenImage  || null,
+    gardenWidth:     activeGarden?.gardenWidth  ?? user.gardenWidth  ?? null,
+    gardenHeight:    activeGarden?.gardenHeight ?? user.gardenHeight ?? null,
+    recordByBed:     user.recordByBed  ?? false,
+    activeGardenId:  user.activeGardenId ?? null,
   };
 }
 
@@ -74,6 +81,13 @@ router.post('/register', async (req, res) => {
     const passwordHash = await bcrypt.hash(password, 12);
     const user = await User.create({ name, email, passwordHash, role });
 
+    // Owners get a default garden so currentGardenId is always set
+    if (role === 'owner') {
+      const defaultGarden = await Garden.create({ userId: user._id, name: 'My Garden' });
+      await User.findByIdAndUpdate(user._id, { activeGardenId: defaultGarden._id });
+      user.activeGardenId = defaultGarden._id;
+    }
+
     // Auto-link any pending garden access invites for this email
     await GardenAccess.updateMany(
       { granteeEmail: email, status: 'pending' },
@@ -82,7 +96,7 @@ router.post('/register', async (req, res) => {
 
     const token = signToken(user._id);
     logger.info({ action: 'user.register', userId: user._id, email: user.email, role }, 'User registered');
-    res.status(201).json({ token, user: userPayload(user) });
+    res.status(201).json({ token, user: await userPayload(user) });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -107,7 +121,7 @@ router.post('/login', async (req, res) => {
     await User.findByIdAndUpdate(user._id, { lastLoginAt: new Date() });
     const token = signToken(user._id);
     logger.info({ action: 'user.login', userId: user._id, email: user.email, role: user.role }, 'User logged in');
-    res.json({ token, user: userPayload(user) });
+    res.json({ token, user: await userPayload(user) });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -133,12 +147,29 @@ router.post('/me/hidden-plants', requireAuth, async (req, res) => {
   }
 });
 
+// PUT /api/auth/me/active-garden — switch active garden
+router.put('/me/active-garden', requireAuth, async (req, res) => {
+  try {
+    const { gardenId } = req.body;
+    if (!gardenId) return res.status(400).json({ error: 'gardenId is required' });
+    const garden = await Garden.findById(gardenId);
+    if (!garden) return res.status(404).json({ error: 'Garden not found' });
+    if (garden.userId.toString() !== req.userId) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+    const user = await User.findByIdAndUpdate(req.userId, { activeGardenId: gardenId }, { new: true });
+    res.json(await userPayload(user));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // GET /api/auth/me
 router.get('/me', requireAuth, async (req, res) => {
   try {
     const user = await User.findById(req.userId).select('-passwordHash');
     if (!user) return res.status(404).json({ error: 'User not found' });
-    res.json(userPayload(user));
+    res.json(await userPayload(user));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -157,7 +188,7 @@ router.put('/me', requireAuth, async (req, res) => {
       { new: true }
     );
     if (!user) return res.status(404).json({ error: 'User not found' });
-    res.json(userPayload(user));
+    res.json(await userPayload(user));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -274,7 +305,7 @@ router.put('/me/garden', requireAuth, async (req, res) => {
     }
 
     await user.save();
-    res.json(userPayload(user));
+    res.json(await userPayload(user));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -293,7 +324,7 @@ router.post('/me/garden-image', requireAuth, upload.single('image'), async (req,
     }
     user.gardenImage = `/uploads/${req.file.filename}`;
     await user.save();
-    res.json(userPayload(user));
+    res.json(await userPayload(user));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -310,7 +341,7 @@ router.delete('/me/garden-image', requireAuth, async (req, res) => {
       user.gardenImage = null;
       await user.save();
     }
-    res.json(userPayload(user));
+    res.json(await userPayload(user));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

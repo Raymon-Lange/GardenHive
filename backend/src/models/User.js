@@ -13,8 +13,9 @@ const userSchema = new mongoose.Schema(
     gardenImage:  { type: String },
     gardenWidth:  { type: Number, min: 1, default: null },
     gardenHeight: { type: Number, min: 1, default: null },
-    lastLoginAt:  { type: Date, default: null },
-    recordByBed:  { type: Boolean, default: false },
+    lastLoginAt:    { type: Date, default: null },
+    recordByBed:    { type: Boolean, default: false },
+    activeGardenId: { type: mongoose.Schema.Types.ObjectId, ref: 'Garden', default: null },
   },
   { timestamps: true }
 );

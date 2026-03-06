@@ -3,24 +3,27 @@ import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../lib/api';
 import { Plus, Trash2, ChevronRight, Rows3 } from 'lucide-react';
+import { useGarden } from '../context/GardenContext';
 
-function useBeds() {
+function useBeds(gardenId) {
   return useQuery({
-    queryKey: ['beds'],
-    queryFn: () => api.get('/beds').then((r) => r.data),
+    queryKey: ['beds', gardenId],
+    queryFn: () => api.get('/beds', { params: { gardenId } }).then((r) => r.data),
+    enabled: !!gardenId,
   });
 }
 
 export default function GardenBeds() {
   const queryClient = useQueryClient();
-  const { data: beds = [], isLoading } = useBeds();
+  const { currentGardenId } = useGarden();
+  const { data: beds = [], isLoading } = useBeds(currentGardenId);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: '', rows: 4, cols: 4 });
 
   const createBed = useMutation({
     mutationFn: (body) => api.post('/beds', body).then((r) => r.data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['beds'] });
+      queryClient.invalidateQueries({ queryKey: ['beds', currentGardenId] });
       setShowForm(false);
       setForm({ name: '', rows: 4, cols: 4 });
     },
@@ -28,12 +31,12 @@ export default function GardenBeds() {
 
   const deleteBed = useMutation({
     mutationFn: (id) => api.delete(`/beds/${id}`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['beds'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['beds', currentGardenId] }),
   });
 
   function handleCreate(e) {
     e.preventDefault();
-    createBed.mutate({ name: form.name, rows: Number(form.rows), cols: Number(form.cols) });
+    createBed.mutate({ name: form.name, rows: Number(form.rows), cols: Number(form.cols), gardenId: currentGardenId });
   }
 
   return (
@@ -45,7 +48,7 @@ export default function GardenBeds() {
             {beds.length} {beds.length === 1 ? 'bed' : 'beds'}
           </p>
         </div>
-        <button className="btn-primary" onClick={() => setShowForm((v) => !v)}>
+        <button className="btn-primary" onClick={() => setShowForm((v) => !v)} disabled={!currentGardenId}>
           <Plus size={16} /> New bed
         </button>
       </div>

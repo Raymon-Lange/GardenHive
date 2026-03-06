@@ -1,6 +1,6 @@
 const {
   connectDB, disconnectDB, clearDB,
-  api, createUser, createBed, createHarvest, createSystemPlant,
+  api, createUser, createGarden, createBed, createHarvest, createSystemPlant,
 } = require('./helpers');
 
 beforeAll(connectDB);
@@ -20,7 +20,8 @@ describe('GET /api/admin/stats', () => {
     const { token } = await createSuperAdmin();
     const { user: other } = await createUser();
     const plant = await createSystemPlant({ name: 'Tomato', emoji: '🍅' });
-    await createBed(other._id);
+    const garden = await createGarden(other._id);
+    await createBed(other._id, garden._id);
     await createHarvest(other._id, plant._id);
 
     const res = await api()
@@ -94,7 +95,8 @@ describe('GET /api/admin/users', () => {
     const { token } = await createSuperAdmin();
     const { user: other } = await createUser({ email: 'gardener@test.com' });
     const plant = await createSystemPlant({ name: 'Cucumber', emoji: '🥒' });
-    await createBed(other._id);
+    const garden = await createGarden(other._id);
+    await createBed(other._id, garden._id);
     await createHarvest(other._id, plant._id);
     await createHarvest(other._id, plant._id);
 

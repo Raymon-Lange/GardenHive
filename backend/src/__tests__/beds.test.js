@@ -1,6 +1,6 @@
 const {
   connectDB, disconnectDB, clearDB,
-  authHeader, createUser, createHelper, createBed, createGrant, createSystemPlant,
+  authHeader, createUser, createHelper, createGarden, createBed, createGrant, createSystemPlant,
   api,
 } = require('./helpers');
 
@@ -16,34 +16,48 @@ describe('GET /api/beds', () => {
     expect(res.status).toBe(401);
   });
 
-  it('returns empty array when owner has no beds', async () => {
+  it('returns 400 when gardenId is missing', async () => {
     const { token } = await createUser();
     const res = await api()
       .get('/api/beds')
+      .set('Authorization', `Bearer ${token}`);
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/gardenId/i);
+  });
+
+  it('returns empty array when owner has no beds in the garden', async () => {
+    const { user, token } = await createUser();
+    const garden = await createGarden(user._id);
+    const res = await api()
+      .get(`/api/beds?gardenId=${garden._id}`)
       .set('Authorization', `Bearer ${token}`);
     expect(res.status).toBe(200);
     expect(res.body).toEqual([]);
   });
 
-  it('returns all beds belonging to the owner', async () => {
+  it('returns only beds belonging to the specified garden', async () => {
     const { user, token } = await createUser();
-    await createBed(user._id, { name: 'Bed A' });
-    await createBed(user._id, { name: 'Bed B' });
+    const gardenA = await createGarden(user._id, { name: 'Garden A' });
+    const gardenB = await createGarden(user._id, { name: 'Garden B' });
+    await createBed(user._id, gardenA._id, { name: 'Bed A' });
+    await createBed(user._id, gardenB._id, { name: 'Bed B' });
     const res = await api()
-      .get('/api/beds')
+      .get(`/api/beds?gardenId=${gardenA._id}`)
       .set('Authorization', `Bearer ${token}`);
     expect(res.status).toBe(200);
-    expect(res.body).toHaveLength(2);
-    expect(res.body[0]).toMatchObject({ name: expect.any(String), rows: expect.any(Number), cols: expect.any(Number), cells: expect.any(Array) });
+    expect(res.body).toHaveLength(1);
+    expect(res.body[0].name).toBe('Bed A');
+    expect(res.body[0]).toMatchObject({ rows: expect.any(Number), cols: expect.any(Number), cells: expect.any(Array) });
   });
 
   it('returns 403 for helper with only analytics permission', async () => {
     const { user: owner } = await createUser();
+    const garden = await createGarden(owner._id);
     const { user: helper, token: helperToken } = await createHelper();
     await createGrant(owner._id, helper._id, helper.email, 'analytics');
 
     const res = await api()
-      .get(`/api/beds?ownerId=${owner._id}`)
+      .get(`/api/beds?ownerId=${owner._id}&gardenId=${garden._id}`)
       .set('Authorization', `Bearer ${helperToken}`);
     expect(res.status).toBe(403);
     expect(res.body.error).toMatch(/insufficient permission/i);
@@ -51,12 +65,13 @@ describe('GET /api/beds', () => {
 
   it('returns owner beds for helper with full permission', async () => {
     const { user: owner } = await createUser();
+    const garden = await createGarden(owner._id);
     const { user: helper, token: helperToken } = await createHelper();
     await createGrant(owner._id, helper._id, helper.email, 'full');
-    await createBed(owner._id, { name: 'Owner Bed' });
+    await createBed(owner._id, garden._id, { name: 'Owner Bed' });
 
     const res = await api()
-      .get(`/api/beds?ownerId=${owner._id}`)
+      .get(`/api/beds?ownerId=${owner._id}&gardenId=${garden._id}`)
       .set('Authorization', `Bearer ${helperToken}`);
     expect(res.status).toBe(200);
     expect(res.body.some((b) => b.name === 'Owner Bed')).toBe(true);
@@ -80,9 +95,10 @@ describe('GET /api/beds/:id', () => {
     expect(res.body.error).toMatch(/not found/i);
   });
 
-  it("returns the bed with cells populated", async () => {
+  it('returns the bed with cells populated', async () => {
     const { user, token } = await createUser();
-    const bed = await createBed(user._id, { name: 'Test Bed' });
+    const garden = await createGarden(user._id);
+    const bed = await createBed(user._id, garden._id, { name: 'Test Bed' });
     const res = await api()
       .get(`/api/beds/${bed._id}`)
       .set('Authorization', `Bearer ${token}`);
@@ -101,41 +117,55 @@ describe('POST /api/beds', () => {
   });
 
   it('returns 400 when name is missing', async () => {
-    const { token } = await createUser();
+    const { user, token } = await createUser();
+    const garden = await createGarden(user._id);
     const res = await api()
       .post('/api/beds')
       .set('Authorization', `Bearer ${token}`)
-      .send({ rows: 3, cols: 3 });
+      .send({ rows: 3, cols: 3, gardenId: garden._id.toString() });
     expect(res.status).toBe(400);
     expect(res.body.error).toMatch(/required/i);
   });
 
   it('returns 400 when rows is missing', async () => {
-    const { token } = await createUser();
+    const { user, token } = await createUser();
+    const garden = await createGarden(user._id);
     const res = await api()
       .post('/api/beds')
       .set('Authorization', `Bearer ${token}`)
-      .send({ name: 'Bed', cols: 3 });
+      .send({ name: 'Bed', cols: 3, gardenId: garden._id.toString() });
     expect(res.status).toBe(400);
     expect(res.body.error).toMatch(/required/i);
   });
 
   it('returns 400 when cols is missing', async () => {
-    const { token } = await createUser();
+    const { user, token } = await createUser();
+    const garden = await createGarden(user._id);
     const res = await api()
       .post('/api/beds')
       .set('Authorization', `Bearer ${token}`)
-      .send({ name: 'Bed', rows: 3 });
+      .send({ name: 'Bed', rows: 3, gardenId: garden._id.toString() });
     expect(res.status).toBe(400);
     expect(res.body.error).toMatch(/required/i);
   });
 
-  it('returns 201 on valid creation', async () => {
+  it('returns 400 when gardenId is missing', async () => {
     const { token } = await createUser();
     const res = await api()
       .post('/api/beds')
       .set('Authorization', `Bearer ${token}`)
       .send({ name: 'New Bed', rows: 4, cols: 4 });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/gardenId/i);
+  });
+
+  it('returns 201 on valid creation', async () => {
+    const { user, token } = await createUser();
+    const garden = await createGarden(user._id);
+    const res = await api()
+      .post('/api/beds')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ name: 'New Bed', rows: 4, cols: 4, gardenId: garden._id.toString() });
     expect(res.status).toBe(201);
     expect(res.body._id).toBeDefined();
     expect(res.body.name).toBe('New Bed');
@@ -146,13 +176,14 @@ describe('POST /api/beds', () => {
 
   it('returns 403 for helper with full permission trying to create a bed', async () => {
     const { user: owner } = await createUser();
+    const garden = await createGarden(owner._id);
     const { user: helper, token: helperToken } = await createHelper();
     await createGrant(owner._id, helper._id, helper.email, 'full');
 
     const res = await api()
       .post(`/api/beds?ownerId=${owner._id}`)
       .set('Authorization', `Bearer ${helperToken}`)
-      .send({ name: 'Helper Bed', rows: 2, cols: 2 });
+      .send({ name: 'Helper Bed', rows: 2, cols: 2, gardenId: garden._id.toString() });
     expect(res.status).toBe(403);
     expect(res.body.error).toMatch(/only the garden owner/i);
   });
@@ -177,7 +208,8 @@ describe('PUT /api/beds/:id', () => {
 
   it('returns 200 and updates bed name', async () => {
     const { user, token } = await createUser();
-    const bed = await createBed(user._id, { name: 'Old Name' });
+    const garden = await createGarden(user._id);
+    const bed = await createBed(user._id, garden._id, { name: 'Old Name' });
     const res = await api()
       .put(`/api/beds/${bed._id}`)
       .set('Authorization', `Bearer ${token}`)
@@ -187,8 +219,9 @@ describe('PUT /api/beds/:id', () => {
   });
 
   it('returns 200 and sets mapRow/mapCol when garden dimensions are set', async () => {
-    const { user, token } = await createUser({ gardenWidth: 20, gardenHeight: 12 });
-    const bed = await createBed(user._id, { rows: 3, cols: 4 });
+    const { user, token } = await createUser();
+    const garden = await createGarden(user._id, { gardenWidth: 20, gardenHeight: 12 });
+    const bed = await createBed(user._id, garden._id, { rows: 3, cols: 4 });
     const res = await api()
       .put(`/api/beds/${bed._id}`)
       .set('Authorization', `Bearer ${token}`)
@@ -201,7 +234,8 @@ describe('PUT /api/beds/:id', () => {
 
   it('returns 400 when garden dimensions are not set', async () => {
     const { user, token } = await createUser();
-    const bed = await createBed(user._id, { rows: 2, cols: 2 });
+    const garden = await createGarden(user._id);
+    const bed = await createBed(user._id, garden._id, { rows: 2, cols: 2 });
     const res = await api()
       .put(`/api/beds/${bed._id}`)
       .set('Authorization', `Bearer ${token}`)
@@ -212,8 +246,9 @@ describe('PUT /api/beds/:id', () => {
   });
 
   it('returns 400 when position is outside garden boundary', async () => {
-    const { user, token } = await createUser({ gardenWidth: 10, gardenHeight: 10 });
-    const bed = await createBed(user._id, { rows: 3, cols: 4 });
+    const { user, token } = await createUser();
+    const garden = await createGarden(user._id, { gardenWidth: 10, gardenHeight: 10 });
+    const bed = await createBed(user._id, garden._id, { rows: 3, cols: 4 });
     const res = await api()
       .put(`/api/beds/${bed._id}`)
       .set('Authorization', `Bearer ${token}`)
@@ -224,23 +259,23 @@ describe('PUT /api/beds/:id', () => {
   });
 
   it('returns 409 when position overlaps an existing placed bed', async () => {
-    const { user, token } = await createUser({ gardenWidth: 20, gardenHeight: 12 });
-    // Place first bed at (0,0)
-    await createBed(user._id, { rows: 3, cols: 3, mapRow: 0, mapCol: 0 });
-    // Try to place second bed overlapping first
-    const bed2 = await createBed(user._id, { rows: 2, cols: 2 });
+    const { user, token } = await createUser();
+    const garden = await createGarden(user._id, { gardenWidth: 20, gardenHeight: 12 });
+    await createBed(user._id, garden._id, { rows: 3, cols: 3, mapRow: 0, mapCol: 0 });
+    const bed2 = await createBed(user._id, garden._id, { rows: 2, cols: 2 });
     const res = await api()
       .put(`/api/beds/${bed2._id}`)
       .set('Authorization', `Bearer ${token}`)
-      .send({ mapRow: 1, mapCol: 1 }); // overlaps bed1 (0..3, 0..3)
+      .send({ mapRow: 1, mapCol: 1 });
 
     expect(res.status).toBe(409);
     expect(res.body.error).toMatch(/overlaps/i);
   });
 
   it('returns 400 when mapRow is negative', async () => {
-    const { user, token } = await createUser({ gardenWidth: 20, gardenHeight: 12 });
-    const bed = await createBed(user._id, { rows: 2, cols: 2 });
+    const { user, token } = await createUser();
+    const garden = await createGarden(user._id, { gardenWidth: 20, gardenHeight: 12 });
+    const bed = await createBed(user._id, garden._id, { rows: 2, cols: 2 });
     const res = await api()
       .put(`/api/beds/${bed._id}`)
       .set('Authorization', `Bearer ${token}`)
@@ -251,10 +286,11 @@ describe('PUT /api/beds/:id', () => {
   });
 
   it('returns 403 when helper attempts position update', async () => {
-    const { user: owner } = await createUser({ gardenWidth: 20, gardenHeight: 12 });
+    const { user: owner } = await createUser();
+    const garden = await createGarden(owner._id, { gardenWidth: 20, gardenHeight: 12 });
     const { user: helper, token: helperToken } = await createHelper();
     await createGrant(owner._id, helper._id, helper.email, 'full');
-    const bed = await createBed(owner._id, { rows: 2, cols: 2 });
+    const bed = await createBed(owner._id, garden._id, { rows: 2, cols: 2 });
 
     const res = await api()
       .put(`/api/beds/${bed._id}?ownerId=${owner._id}`)
@@ -276,7 +312,8 @@ describe('PUT /api/beds/:id/cells', () => {
 
   it('sets a cell with a plant', async () => {
     const { user, token } = await createUser();
-    const bed = await createBed(user._id);
+    const garden = await createGarden(user._id);
+    const bed = await createBed(user._id, garden._id);
     const plant = await createSystemPlant();
     const res = await api()
       .put(`/api/beds/${bed._id}/cells`)
@@ -292,7 +329,8 @@ describe('PUT /api/beds/:id/cells', () => {
   it('clears a cell when plantId is null', async () => {
     const { user, token } = await createUser();
     const plant = await createSystemPlant();
-    const bed = await createBed(user._id, { cells: [{ row: 0, col: 0, plantId: plant._id }] });
+    const garden = await createGarden(user._id);
+    const bed = await createBed(user._id, garden._id, { cells: [{ row: 0, col: 0, plantId: plant._id }] });
 
     const res = await api()
       .put(`/api/beds/${bed._id}/cells`)
@@ -321,14 +359,14 @@ describe('DELETE /api/beds/:id', () => {
 
   it('returns 200 and deletes the bed for the owner', async () => {
     const { user, token } = await createUser();
-    const bed = await createBed(user._id);
+    const garden = await createGarden(user._id);
+    const bed = await createBed(user._id, garden._id);
     const res = await api()
       .delete(`/api/beds/${bed._id}`)
       .set('Authorization', `Bearer ${token}`);
     expect(res.status).toBe(200);
     expect(res.body.message).toBeDefined();
 
-    // Confirm it's gone
     const getRes = await api()
       .get(`/api/beds/${bed._id}`)
       .set('Authorization', `Bearer ${token}`);
@@ -337,9 +375,10 @@ describe('DELETE /api/beds/:id', () => {
 
   it('returns 403 for helper with full permission trying to delete a bed', async () => {
     const { user: owner } = await createUser();
+    const garden = await createGarden(owner._id);
     const { user: helper, token: helperToken } = await createHelper();
     await createGrant(owner._id, helper._id, helper.email, 'full');
-    const bed = await createBed(owner._id);
+    const bed = await createBed(owner._id, garden._id);
 
     const res = await api()
       .delete(`/api/beds/${bed._id}?ownerId=${owner._id}`)
