@@ -161,7 +161,7 @@
 
 - [X] T034 [P] Update `frontend/src/components/GardenDimensionsModal.jsx` — replace `PUT /api/auth/me/garden` call with `PUT /api/gardens/:currentGardenId`; invalidate `['gardens']` on success
 - [X] T035 [P] Update `frontend/src/pages/Profile.jsx` — garden name/dimensions/image section was already absent; no changes needed
-- [ ] T036 Run migration and verify: `node backend/src/seed/migrateToMultiGarden.js` against dev Docker stack; confirm all existing users have `activeGardenId` set and all beds have `gardenId` set
+- [X] T036 Run migration and verify: `node backend/src/seed/migrateToMultiGarden.js` against dev Docker stack; confirm all existing users have `activeGardenId` set and all beds have `gardenId` set
 - [X] T037 [P] Run full backend test suite `cd backend && npm test` — 221/221 tests passing
 - [X] T038 [P] Run frontend lint `cd frontend && npm run lint` — zero ESLint errors
 - [X] T039 Review and update Playwright E2E tests — updated `beds.spec.js` createBed/setGardenDimensions helpers to pass gardenId; updated register route to auto-create default garden for owners; updated auth.test.js to expect gardenName: 'My Garden' on register

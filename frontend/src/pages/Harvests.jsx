@@ -4,6 +4,7 @@ import api from '../lib/api';
 import { Plus, Trash2, Leaf, Download, Upload } from 'lucide-react';
 import HarvestImportModal from '../components/HarvestImportModal';
 import { useAuth } from '../context/AuthContext';
+import { useGarden } from '../context/GardenContext';
 
 const UNITS = ['lbs', 'oz', 'kg', 'g', 'count'];
 
@@ -14,10 +15,11 @@ function usePlants() {
   });
 }
 
-function useBeds() {
+function useBeds(gardenId) {
   return useQuery({
-    queryKey: ['beds'],
-    queryFn: () => api.get('/beds').then((r) => r.data),
+    queryKey: ['beds', gardenId],
+    queryFn: () => api.get('/beds', { params: { gardenId } }).then((r) => r.data),
+    enabled: !!gardenId,
   });
 }
 
@@ -35,8 +37,10 @@ function todayISO() {
 export default function Harvests() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const { currentGardenId, gardens } = useGarden();
+  const currentGarden = gardens.find((g) => g._id === currentGardenId);
   const { data: plants = [] } = usePlants();
-  const { data: beds = [] } = useBeds();
+  const { data: beds = [] } = useBeds(currentGardenId);
   const { data: harvests = [], isLoading } = useHarvests();
 
   const [importOpen, setImportOpen] = useState(false);
@@ -147,6 +151,11 @@ export default function Harvests() {
 
             {user?.recordByBed && (
               <div>
+                {currentGarden && (
+                  <p className="text-xs text-garden-500 mb-1">
+                    Recording harvest for: <span className="font-medium text-garden-700">{currentGarden.name}</span>
+                  </p>
+                )}
                 <label className="label">Garden bed (optional)</label>
                 <select
                   className="input"

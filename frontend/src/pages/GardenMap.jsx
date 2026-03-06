@@ -46,7 +46,7 @@ export default function GardenMap() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user, updateUser } = useAuth();
-  const { currentGardenId, gardens } = useGarden();
+  const { currentGardenId, gardens, setCurrentGardenId } = useGarden();
   const gridRef = useRef(null);
 
   const { data: beds = [], isLoading } = useBeds(currentGardenId);
@@ -315,6 +315,23 @@ export default function GardenMap() {
       <div className="flex items-center justify-between mb-4">
         <div>
           <h1 className="text-2xl font-bold text-garden-900">Garden Map</h1>
+          {isOwner && (
+            <div className="flex items-center gap-2 mt-1">
+              <select
+                className="input py-0.5 text-sm"
+                value={currentGardenId || ''}
+                onChange={(e) => setCurrentGardenId(e.target.value)}
+                disabled={gardens.length <= 1}
+              >
+                {gardens.map((g) => (
+                  <option key={g._id} value={g._id}>{g.name}</option>
+                ))}
+              </select>
+              <span className="text-xs bg-garden-100 text-garden-700 rounded-full px-2 py-0.5 whitespace-nowrap">
+                Harvest default
+              </span>
+            </div>
+          )}
           <p className="text-garden-600 text-sm mt-0.5">
             {gardenWidth} × {gardenHeight} ft · {placedBeds.length} beds placed
             {isOwner && ' · drag to reposition'}
