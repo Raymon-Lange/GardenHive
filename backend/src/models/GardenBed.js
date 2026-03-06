@@ -11,7 +11,8 @@ const cellSchema = new mongoose.Schema(
 
 const gardenBedSchema = new mongoose.Schema(
   {
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+    userId:   { type: mongoose.Schema.Types.ObjectId, ref: 'User',   required: true, index: true },
+    gardenId: { type: mongoose.Schema.Types.ObjectId, ref: 'Garden', required: true, index: true },
     name: { type: String, required: true, trim: true },
     rows: { type: Number, required: true, min: 1, max: 50 },
     cols: { type: Number, required: true, min: 1, max: 50 },

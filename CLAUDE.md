@@ -20,6 +20,10 @@ Auto-generated from all feature plans. Last updated: 2026-02-23
 - N/A — PDF generated in browser memory; no persistence (009-simplify-pdf-layout)
 - JavaScript + React 19 (frontend only — no backend changes) + jsPDF 4.x + html2canvas 1.x (already installed), React Router 7, TanStack React Query 5 (011-standard-guest-plan)
 - `localStorage` key `gh_guest_garden` (browser only — no server storage) (011-standard-guest-plan)
+- Node.js 22 (backend) / React 19 + JSX (frontend) + Express 5, Mongoose 9, TanStack React Query 5, React Router 7, Tailwind CSS 3, Lucide React, csv-parse 6.x (already installed), multer v2 (already installed) (012-multiple-gardens)
+- MongoDB 7 — new `gardens` collection; additive `gardenId` field on `GardenBed`; additive `activeGardenId` on `User` (012-multiple-gardens)
+- JavaScript + React 19 (frontend only — no backend changes) + TanStack React Query 5, React Router 7, Lucide React, Tailwind CSS 3 (all already installed) (013-map-garden-switcher)
+- N/A — no new storage; existing `User.activeGardenId` persists the active garden (013-map-garden-switcher)
 
 - Node.js 22 (backend) / JavaScript + React 19 (frontend) + Express 5, Mongoose 9, React Router 7, TanStack React (001-existing-features)
 
@@ -40,9 +44,9 @@ npm test && npm run lint
 Node.js 22 (backend) / JavaScript + React 19 (frontend): Follow standard conventions
 
 ## Recent Changes
+- 013-map-garden-switcher: Added JavaScript + React 19 (frontend only — no backend changes) + TanStack React Query 5, React Router 7, Lucide React, Tailwind CSS 3 (all already installed)
+- 012-multiple-gardens: Added Node.js 22 (backend) / React 19 + JSX (frontend) + Express 5, Mongoose 9, TanStack React Query 5, React Router 7, Tailwind CSS 3, Lucide React, csv-parse 6.x (already installed), multer v2 (already installed)
 - 011-standard-guest-plan: Added JavaScript + React 19 (frontend only — no backend changes) + jsPDF 4.x + html2canvas 1.x (already installed), React Router 7, TanStack React Query 5
-- 010-remove-cell-labels: Added JavaScript + React 19 (frontend only — no backend changes) + jsPDF 4.2.0 + html2canvas 1.4.1 (already installed — no changes)
-- 009-simplify-pdf-layout: Added JavaScript + React 19 (frontend only — no backend changes) + jsPDF 4.2.0 + html2canvas 1.4.1 (already installed — no changes)
 
 
 <!-- MANUAL ADDITIONS START -->

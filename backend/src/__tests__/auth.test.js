@@ -1,6 +1,6 @@
 const {
   connectDB, disconnectDB, clearDB,
-  authHeader, createUser, createHelper, createSystemPlant, createBed,
+  authHeader, createUser, createHelper, createSystemPlant, createGarden, createBed,
   api,
 } = require('./helpers');
 
@@ -22,10 +22,11 @@ describe('POST /api/auth/register', () => {
       name: 'Alice',
       email: 'alice@test.com',
       role: 'owner',
-      gardenName: null,
+      gardenName: 'My Garden',
       gardenImage: null,
     });
     expect(res.body.user.id).toBeDefined();
+    expect(res.body.user.activeGardenId).toBeDefined();
     expect(JSON.stringify(res.body)).not.toMatch(/passwordHash/);
   });
 
@@ -443,7 +444,8 @@ describe('PUT /api/auth/me/garden', () => {
   it('returns 400 when reducing width clips a placed bed', async () => {
     const { token, user } = await createUser({ gardenWidth: 20, gardenHeight: 12 });
     // Place a bed at col 15, width 4 — right edge at col 19
-    await createBed(user._id, { rows: 2, cols: 4, mapRow: 0, mapCol: 15 });
+    const garden = await createGarden(user._id);
+    await createBed(user._id, garden._id, { rows: 2, cols: 4, mapRow: 0, mapCol: 15 });
 
     const res = await api()
       .put('/api/auth/me/garden')
@@ -456,7 +458,8 @@ describe('PUT /api/auth/me/garden', () => {
 
   it('returns 400 when reducing height clips a placed bed', async () => {
     const { token, user } = await createUser({ gardenWidth: 20, gardenHeight: 12 });
-    await createBed(user._id, { rows: 3, cols: 2, mapRow: 9, mapCol: 0 });
+    const garden2 = await createGarden(user._id);
+    await createBed(user._id, garden2._id, { rows: 3, cols: 2, mapRow: 9, mapCol: 0 });
 
     const res = await api()
       .put('/api/auth/me/garden')

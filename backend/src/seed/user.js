@@ -1,5 +1,6 @@
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
+const Garden = require('../models/Garden');
 
 const DEFAULT_USER = {
   name: 'Mike Jones',
@@ -35,6 +36,14 @@ async function seedUser({ force = false } = {}) {
     gardenWidth: 32,
     gardenHeight: 20,
   });
+
+  const garden = await Garden.create({
+    userId: user._id,
+    name: 'My Garden',
+    gardenWidth: 32,
+    gardenHeight: 20,
+  });
+  await User.findByIdAndUpdate(user._id, { activeGardenId: garden._id });
 
   console.log(`Created default user:`);
   console.log(`  Name:     ${user.name}`);

@@ -23,24 +23,36 @@ const API_URL = process.env.API_URL ?? BASE_URL;
  * React app initialises with the correct dimensions on next page navigation.
  */
 async function setGardenDimensions(token, page, width = 10, height = 8) {
-  const res = await fetch(`${API_URL}/api/auth/me/garden`, {
+  const gardenId = await getActiveGardenId(token);
+  await fetch(`${API_URL}/api/gardens/${gardenId}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
     body: JSON.stringify({ gardenWidth: width, gardenHeight: height }),
   });
-  const updatedUser = await res.json();
-  // Sync the updated user into localStorage so the app doesn't initialise
-  // with the stale (pre-dimensions) gh_user from the fixture setup
+  // Sync the updated user into localStorage (fetch fresh from /api/auth/me)
+  const meRes = await fetch(`${API_URL}/api/auth/me`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const updatedUser = await meRes.json();
   await page.evaluate((u) => {
     localStorage.setItem('gh_user', JSON.stringify(u));
   }, updatedUser);
 }
 
+async function getActiveGardenId(token) {
+  const res = await fetch(`${API_URL}/api/auth/me`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const user = await res.json();
+  return user.activeGardenId;
+}
+
 async function createBed(token, name = 'E2E Test Bed', rows = 3, cols = 3) {
+  const gardenId = await getActiveGardenId(token);
   const res = await fetch(`${API_URL}/api/beds`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ name, rows, cols }),
+    body: JSON.stringify({ name, rows, cols, gardenId }),
   });
   return res.json();
 }

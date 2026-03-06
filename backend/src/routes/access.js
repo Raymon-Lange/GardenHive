@@ -1,6 +1,7 @@
 const express = require('express');
 const requireAuth = require('../middleware/auth');
 const GardenAccess = require('../models/GardenAccess');
+const Garden = require('../models/Garden');
 const User = require('../models/User');
 const logger = require('../lib/logger');
 
@@ -10,16 +11,23 @@ const router = express.Router();
 router.get('/shared', requireAuth, async (req, res) => {
   try {
     const grants = await GardenAccess.find({ granteeId: req.userId, status: 'active' })
-      .populate('ownerId', 'name email gardenName gardenImage');
-    const gardens = grants.map((g) => ({
-      ownerId:     g.ownerId._id,
-      ownerName:   g.ownerId.name,
-      ownerEmail:  g.ownerId.email,
-      gardenName:  g.ownerId.gardenName  || null,
-      gardenImage: g.ownerId.gardenImage || null,
-      permission:  g.permission,
+      .populate('ownerId', 'name email gardenName gardenImage activeGardenId');
+
+    // For each shared owner, fetch all their gardens so helpers can switch between them
+    const result = await Promise.all(grants.map(async (g) => {
+      const ownerGardens = await Garden.find({ userId: g.ownerId._id }).sort({ createdAt: 1 }).lean();
+      return {
+        ownerId:        g.ownerId._id,
+        ownerName:      g.ownerId.name,
+        ownerEmail:     g.ownerId.email,
+        gardenName:     g.ownerId.gardenName  || null,
+        gardenImage:    g.ownerId.gardenImage || null,
+        activeGardenId: g.ownerId.activeGardenId || null,
+        gardens:        ownerGardens,
+        permission:     g.permission,
+      };
     }));
-    res.json(gardens);
+    res.json(result);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

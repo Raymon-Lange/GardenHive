@@ -2,21 +2,20 @@ import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Ruler, X } from 'lucide-react';
 import api from '../lib/api';
-import { useAuth } from '../context/AuthContext';
+import { useGarden } from '../context/GardenContext';
 
 export default function GardenDimensionsModal({ onSave, onClose }) {
   const queryClient = useQueryClient();
-  const { updateUser } = useAuth();
+  const { currentGardenId } = useGarden();
   const [form, setForm] = useState({ width: '', height: '' });
   const [errors, setErrors] = useState({});
 
   const saveDimensions = useMutation({
     mutationFn: ({ gardenWidth, gardenHeight }) =>
-      api.put('/auth/me/garden', { gardenWidth, gardenHeight }).then((r) => r.data),
-    onSuccess: (updatedUser) => {
-      updateUser({ gardenWidth: updatedUser.gardenWidth, gardenHeight: updatedUser.gardenHeight });
-      queryClient.invalidateQueries({ queryKey: ['user'] });
-      onSave(updatedUser.gardenWidth, updatedUser.gardenHeight);
+      api.put(`/gardens/${currentGardenId}`, { gardenWidth, gardenHeight }).then((r) => r.data),
+    onSuccess: (updatedGarden) => {
+      queryClient.invalidateQueries({ queryKey: ['gardens'] });
+      onSave(updatedGarden.gardenWidth, updatedGarden.gardenHeight);
     },
   });
 

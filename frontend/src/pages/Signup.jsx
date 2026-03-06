@@ -21,11 +21,12 @@ export default function Signup() {
     }
     setLoading(true);
     try {
-      await register(form.name, form.email, form.password, role);
+      const newUser = await register(form.name, form.email, form.password, role);
       const saved = localStorage.getItem('gh_guest_garden');
       if (saved) {
         const guestGarden = JSON.parse(saved);
-        await api.put('/auth/me/garden', {
+        const gardenId = newUser.activeGardenId;
+        await api.put(`/gardens/${gardenId}`, {
           gardenWidth:  guestGarden.gardenWidth,
           gardenHeight: guestGarden.gardenHeight,
         });
@@ -34,6 +35,7 @@ export default function Signup() {
             name: guestBed.name,
             rows: guestBed.rows,
             cols: guestBed.cols,
+            gardenId,
           });
           await api.put(`/beds/${newBed._id}`, {
             mapRow: guestBed.mapRow,

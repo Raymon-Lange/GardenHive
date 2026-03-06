@@ -1,6 +1,6 @@
 const {
   connectDB, disconnectDB, clearDB,
-  authHeader, createUser, createSystemPlant, createCustomPlant, createBed, createHarvest,
+  authHeader, createUser, createSystemPlant, createCustomPlant, createGarden, createBed, createHarvest,
   api,
 } = require('./helpers');
 
@@ -292,7 +292,8 @@ describe('DELETE /api/plants/:id', () => {
   it('returns 400 when plant is in use in a garden bed', async () => {
     const { user, token } = await createUser();
     const plant = await createCustomPlant(user._id);
-    await createBed(user._id, { cells: [{ row: 0, col: 0, plantId: plant._id }] });
+    const garden = await createGarden(user._id);
+    await createBed(user._id, garden._id, { cells: [{ row: 0, col: 0, plantId: plant._id }] });
     const res = await api()
       .delete(`/api/plants/${plant._id}`)
       .set('Authorization', `Bearer ${token}`);

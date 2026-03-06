@@ -2,12 +2,13 @@ import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useGarden } from '../context/GardenContext';
-import { uploadUrl } from '../lib/api';
+import api, { uploadUrl } from '../lib/api';
 import {
   LayoutDashboard, Leaf, LogOut, Map, BarChart2,
-  Menu, X, ChevronLeft, ChevronRight, ShieldCheck, UserCircle,
+  Menu, X, ChevronLeft, ChevronRight, ShieldCheck, UserCircle, Plus, Trash2,
 } from 'lucide-react';
 import clsx from 'clsx';
+import NewGardenModal from './NewGardenModal';
 
 const ALL_NAV_ITEMS = [
   { to: '/dashboard', label: 'Dashboard',  icon: LayoutDashboard, minPermission: 'full' },
@@ -25,10 +26,14 @@ function allowedNavItems(permission) {
 
 export default function AppLayout({ children }) {
   const { user, logout } = useAuth();
-  const { permission, isOwnGarden, sharedGardens, activeGarden, setActiveGarden, isAwaitingInvite } = useGarden();
+  const {
+    permission, isOwnGarden, sharedGardens, activeGarden, setActiveGarden, isAwaitingInvite,
+    gardens, currentGardenId, setCurrentGardenId, refreshGardens, helperGardens,
+  } = useGarden();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed]   = useState(false);
+  const [showNewGardenModal, setShowNewGardenModal] = useState(false);
 
   function handleLogout() {
     logout();
@@ -59,9 +64,11 @@ export default function AppLayout({ children }) {
   const switcherValue = activeGarden ? activeGarden.ownerId.toString() : 'own';
 
   // Current garden display
-  const currentGardenName  = activeGarden
-    ? (activeGarden.gardenName  || `${activeGarden.ownerName}'s Garden`)
-    : (user?.gardenName || 'My Garden');
+  const ownGardenName = gardens.find((g) => g._id === currentGardenId)?.name || user?.gardenName || 'My Garden';
+  const helperGardenName = helperGardens.find((g) => g._id === currentGardenId)?.name
+    || activeGarden?.gardenName
+    || `${activeGarden?.ownerName}'s Garden`;
+  const currentGardenName  = activeGarden ? helperGardenName : ownGardenName;
   const currentGardenImage = activeGarden ? activeGarden.gardenImage : user?.gardenImage;
 
   // Waiting for invite screen (helper with no access yet)
@@ -154,7 +161,7 @@ export default function AppLayout({ children }) {
           </button>
         </div>
 
-        {/* Garden switcher */}
+        {/* Shared-owner switcher (helper/owner viewing another garden) */}
         {showSwitcher && !collapsed && (
           <div className="px-3 pt-3">
             <select
@@ -163,13 +170,81 @@ export default function AppLayout({ children }) {
               className="w-full bg-garden-700 text-white text-xs rounded-lg px-3 py-2 border border-garden-600 focus:outline-none focus:border-garden-400"
             >
               {user?.role === 'owner' && (
-                <option value="own">
-                  {user.gardenName || 'My Garden'}
-                </option>
+                <option value="own">My Gardens</option>
               )}
               {sharedGardens.map((g) => (
                 <option key={g.ownerId} value={g.ownerId.toString()}>
                   {g.gardenName || `${g.ownerName}'s Garden`}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {/* Own-garden plan switcher (owner only) */}
+        {isOwnGarden && !collapsed && (
+          <div className="px-3 pt-2 space-y-0.5">
+            {gardens.map((g) => {
+              const isActive = g._id === currentGardenId;
+              return (
+                <div
+                  key={g._id}
+                  className={clsx(
+                    'flex items-center justify-between rounded-lg px-2 py-1.5 group',
+                    isActive ? 'bg-garden-600' : 'hover:bg-garden-700'
+                  )}
+                >
+                  <button
+                    type="button"
+                    onClick={() => !isActive && setCurrentGardenId(g._id)}
+                    className={clsx(
+                      'flex-1 text-left text-xs truncate',
+                      isActive ? 'text-white font-medium' : 'text-garden-300 hover:text-white'
+                    )}
+                  >
+                    {g.name}
+                  </button>
+                  {gardens.length > 1 && !isActive && (
+                    <button
+                      type="button"
+                      title={`Delete "${g.name}"`}
+                      onClick={async () => {
+                        if (!confirm(`Delete "${g.name}" and all its beds?`)) return;
+                        try {
+                          await api.delete(`/gardens/${g._id}`);
+                          await refreshGardens();
+                        } catch (err) {
+                          alert(err?.response?.data?.error || 'Failed to delete garden');
+                        }
+                      }}
+                      className="opacity-0 group-hover:opacity-100 text-garden-400 hover:text-red-400 transition-all p-0.5"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+            <button
+              onClick={() => setShowNewGardenModal(true)}
+              className="flex items-center gap-1.5 w-full text-garden-300 hover:text-white text-xs px-2 py-1.5 rounded-lg hover:bg-garden-700 transition-colors mt-1"
+            >
+              <Plus size={13} /> New garden plan
+            </button>
+          </div>
+        )}
+
+        {/* Helper garden switcher (when viewing a shared owner with multiple gardens) */}
+        {!isOwnGarden && helperGardens.length > 1 && !collapsed && (
+          <div className="px-3 pt-2">
+            <select
+              value={currentGardenId || ''}
+              onChange={(e) => setCurrentGardenId(e.target.value)}
+              className="w-full bg-garden-700 text-white text-xs rounded-lg px-3 py-2 border border-garden-600 focus:outline-none focus:border-garden-400"
+            >
+              {helperGardens.map((g) => (
+                <option key={g._id} value={g._id}>
+                  {g.name}
                 </option>
               ))}
             </select>
@@ -291,6 +366,10 @@ export default function AppLayout({ children }) {
       <main className="flex-1 overflow-auto bg-garden-50 pt-14 md:pt-0">
         <div className="max-w-5xl mx-auto px-8 py-8">{children}</div>
       </main>
+
+      {showNewGardenModal && (
+        <NewGardenModal onClose={() => setShowNewGardenModal(false)} />
+      )}
     </div>
   );
 }

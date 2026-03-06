@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, ExternalLink, X } from 'lucide-react';
 import api from '../lib/api';
 import { useAuth } from '../context/AuthContext';
+import { useGarden } from '../context/GardenContext';
 import GardenDimensionsModal from '../components/GardenDimensionsModal';
 import GardenPrintView from '../components/GardenPrintView';
 
@@ -33,10 +34,11 @@ function bedsOverlap(a, b) {
   );
 }
 
-function useBeds() {
+function useBeds(gardenId) {
   return useQuery({
-    queryKey: ['beds'],
-    queryFn: () => api.get('/beds').then((r) => r.data),
+    queryKey: ['beds', gardenId],
+    queryFn: () => api.get('/beds', { params: { gardenId } }).then((r) => r.data),
+    enabled: !!gardenId,
   });
 }
 
@@ -44,9 +46,10 @@ export default function GardenMap() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user, updateUser } = useAuth();
+  const { currentGardenId, gardens, setCurrentGardenId } = useGarden();
   const gridRef = useRef(null);
 
-  const { data: beds = [], isLoading } = useBeds();
+  const { data: beds = [], isLoading } = useBeds(currentGardenId);
 
   // PDF / print refs and state
   const printViewRef = useRef(null);
@@ -62,8 +65,10 @@ export default function GardenMap() {
   const [addForm, setAddForm] = useState({ name: '', rows: 2, cols: 2 });
   const [addError, setAddError] = useState('');
 
-  const gardenWidth  = user?.gardenWidth  ?? null;
-  const gardenHeight = user?.gardenHeight ?? null;
+  // Read dimensions from the current Garden document; fall back to user fields for un-migrated accounts
+  const currentGarden = gardens.find((g) => g._id === currentGardenId);
+  const gardenWidth  = currentGarden?.gardenWidth  ?? user?.gardenWidth  ?? null;
+  const gardenHeight = currentGarden?.gardenHeight ?? user?.gardenHeight ?? null;
   const isOwner = user?.role === 'owner';
 
   // ── Mutations ────────────────────────────────────────────────────────────────
@@ -71,7 +76,7 @@ export default function GardenMap() {
   const createBed = useMutation({
     mutationFn: (body) => api.post('/beds', body).then((r) => r.data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['beds'] });
+      queryClient.invalidateQueries({ queryKey: ['beds', currentGardenId] });
       setShowAddForm(false);
       setAddForm({ name: '', rows: 2, cols: 2 });
       setAddError('');
@@ -82,7 +87,7 @@ export default function GardenMap() {
   const updatePosition = useMutation({
     mutationFn: ({ id, mapRow, mapCol }) =>
       api.put(`/beds/${id}`, { mapRow, mapCol }).then((r) => r.data),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['beds'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['beds', currentGardenId] }),
   });
 
   // ── Drag handlers ────────────────────────────────────────────────────────────
@@ -269,7 +274,7 @@ export default function GardenMap() {
     if (!Number.isInteger(rows) || rows < 1) { setAddError('Height must be a positive whole number'); return; }
     if (!Number.isInteger(cols) || cols < 1) { setAddError('Width must be a positive whole number'); return; }
     setAddError('');
-    createBed.mutate({ name: addForm.name.trim(), rows, cols });
+    createBed.mutate({ name: addForm.name.trim(), rows, cols, gardenId: currentGardenId });
   }
 
   // ── Render ───────────────────────────────────────────────────────────────────
@@ -285,7 +290,10 @@ export default function GardenMap() {
           <p className="text-garden-500">Set up your garden size to get started.</p>
         </div>
         <GardenDimensionsModal
-          onSave={(w, h) => updateUser({ gardenWidth: w, gardenHeight: h })}
+          onSave={(w, h) => {
+            updateUser({ gardenWidth: w, gardenHeight: h });
+            queryClient.invalidateQueries({ queryKey: ['gardens'] });
+          }}
           onClose={() => navigate(-1)}
         />
       </>
@@ -307,6 +315,23 @@ export default function GardenMap() {
       <div className="flex items-center justify-between mb-4">
         <div>
           <h1 className="text-2xl font-bold text-garden-900">Garden Map</h1>
+          {isOwner && (
+            <div className="flex items-center gap-2 mt-1">
+              <select
+                className="input py-0.5 text-sm"
+                value={currentGardenId || ''}
+                onChange={(e) => setCurrentGardenId(e.target.value)}
+                disabled={gardens.length <= 1}
+              >
+                {gardens.map((g) => (
+                  <option key={g._id} value={g._id}>{g.name}</option>
+                ))}
+              </select>
+              <span className="text-xs bg-garden-100 text-garden-700 rounded-full px-2 py-0.5 whitespace-nowrap">
+                Harvest default
+              </span>
+            </div>
+          )}
           <p className="text-garden-600 text-sm mt-0.5">
             {gardenWidth} × {gardenHeight} ft · {placedBeds.length} beds placed
             {isOwner && ' · drag to reposition'}

@@ -11,6 +11,7 @@ const plantsRoutes   = require('./routes/plants');
 const harvestsRoutes = require('./routes/harvests');
 const accessRoutes   = require('./routes/access');
 const adminRoutes    = require('./routes/admin');
+const gardensRoutes  = require('./routes/gardens');
 
 const app = express();
 
@@ -25,6 +26,7 @@ app.use('/api/plants',   plantsRoutes);
 app.use('/api/harvests', harvestsRoutes);
 app.use('/api/access',   accessRoutes);
 app.use('/api/admin',    adminRoutes);
+app.use('/api/gardens',  gardensRoutes);
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 

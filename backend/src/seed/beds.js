@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const User = require('../models/User');
+const Garden = require('../models/Garden');
 const GardenBed = require('../models/GardenBed');
 const Plant = require('../models/Plant');
 
@@ -98,6 +99,9 @@ async function seedBeds({ force = false } = {}) {
   const user = await User.findOne({ email: 'mike@gardenhive.com' });
   if (!user) throw new Error('Default user not found. Run seedUser first.');
 
+  const garden = await Garden.findById(user.activeGardenId);
+  if (!garden) throw new Error('Default user has no active garden. Run seedUser first.');
+
   const existing = await GardenBed.countDocuments({ userId: user._id });
   if (existing > 0) {
     if (!force) {
@@ -107,6 +111,9 @@ async function seedBeds({ force = false } = {}) {
     await GardenBed.deleteMany({ userId: user._id });
     console.log('Cleared existing beds.');
   }
+
+  // Also clean up any extra Garden docs (stale from previous seed runs) — keep only the active one
+  await Garden.deleteMany({ userId: user._id, _id: { $ne: garden._id } });
 
   // Resolve plants for cell seeding
   const plants = await Plant.find({ name: { $in: SELECTED_PLANT_NAMES } });
@@ -120,6 +127,7 @@ async function seedBeds({ force = false } = {}) {
     const cells = buildCells(bed, i, plantIds);
     await GardenBed.create({
       userId: user._id,
+      gardenId: garden._id,
       name: bed.name,
       rows: bed.rows,
       cols: bed.cols,
