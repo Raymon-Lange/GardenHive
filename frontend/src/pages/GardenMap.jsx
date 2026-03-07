@@ -24,6 +24,11 @@ const BED_COLORS = [
   { bg: 'bg-orange-200',  border: 'border-orange-400',  text: 'text-orange-800' },
 ];
 
+// Strip the "Garden — " prefix that multiple-garden names include
+function displayName(name) {
+  return name.split(' — ')[1] || name;
+}
+
 // AABB overlap check — returns true if the two bed rectangles intersect
 function bedsOverlap(a, b) {
   return (
@@ -42,6 +47,49 @@ function useBeds(gardenId) {
   });
 }
 
+// Shared PDF builder — renders all [data-print-section] nodes into a jsPDF doc.
+// Tall sections are tiled across multiple pages.
+async function buildPdf(ref) {
+  const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([
+    import('jspdf'),
+    import('html2canvas'),
+  ]);
+  const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'letter' });
+  const sections = Array.from(
+    ref.querySelectorAll('[data-print-section]')
+  ).sort((a, b) => a.dataset.printSection.localeCompare(b.dataset.printSection));
+
+  let firstPage = true;
+  for (const section of sections) {
+    const canvas = await html2canvas(section, { scale: 2, useCORS: true, logging: false });
+    const PAGE_W = pdf.internal.pageSize.getWidth();
+    const PAGE_H = pdf.internal.pageSize.getHeight();
+    const imgH = (canvas.height * PAGE_W) / canvas.width;
+    if (!firstPage) pdf.addPage();
+    firstPage = false;
+
+    if (imgH <= PAGE_H) {
+      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, PAGE_W, imgH);
+    } else {
+      const slicePx = Math.floor((PAGE_H / imgH) * canvas.height);
+      let offsetPx = 0;
+      let firstSlice = true;
+      while (offsetPx < canvas.height) {
+        if (!firstSlice) pdf.addPage();
+        firstSlice = false;
+        const chunkPx = Math.min(slicePx, canvas.height - offsetPx);
+        const chunk = document.createElement('canvas');
+        chunk.width = canvas.width;
+        chunk.height = chunkPx;
+        chunk.getContext('2d').drawImage(canvas, 0, offsetPx, canvas.width, chunkPx, 0, 0, canvas.width, chunkPx);
+        pdf.addImage(chunk.toDataURL('image/png'), 'PNG', 0, 0, PAGE_W, (chunkPx * PAGE_W) / canvas.width);
+        offsetPx += chunkPx;
+      }
+    }
+  }
+  return pdf;
+}
+
 export default function GardenMap() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -51,9 +99,9 @@ export default function GardenMap() {
 
   const { data: beds = [], isLoading } = useBeds(currentGardenId);
 
-  // PDF / print refs and state
+  // PDF / print refs and state — pdfAction is null | 'download' | 'print'
   const printViewRef = useRef(null);
-  const [isPdfLoading, setIsPdfLoading] = useState(false);
+  const [pdfAction, setPdfAction] = useState(null);
   const [pdfError, setPdfError] = useState(null);
 
   // Drag state
@@ -176,48 +224,9 @@ export default function GardenMap() {
 
   async function handleDownloadPdf() {
     if (!printViewRef.current) return;
-    setIsPdfLoading(true);
+    setPdfAction('download');
     try {
-      const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([
-        import('jspdf'),
-        import('html2canvas'),
-      ]);
-      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'letter' });
-      const sections = Array.from(
-        printViewRef.current.querySelectorAll('[data-print-section]')
-      ).sort((a, b) => a.dataset.printSection.localeCompare(b.dataset.printSection));
-
-      let firstPage = true;
-      for (const section of sections) {
-        const canvas = await html2canvas(section, { scale: 2, useCORS: true, logging: false });
-        const imgData = canvas.toDataURL('image/png');
-        const PAGE_W = pdf.internal.pageSize.getWidth();
-        const PAGE_H = pdf.internal.pageSize.getHeight();
-        const imgH = (canvas.height * PAGE_W) / canvas.width;
-        if (!firstPage) pdf.addPage();
-        firstPage = false;
-        if (imgH <= PAGE_H) {
-          pdf.addImage(imgData, 'PNG', 0, 0, PAGE_W, imgH);
-        } else {
-          // tile tall sections across pages
-          const slicePx = Math.floor((PAGE_H / imgH) * canvas.height);
-          let offsetPx = 0;
-          let firstSlice = true;
-          while (offsetPx < canvas.height) {
-            if (!firstSlice) pdf.addPage();
-            firstSlice = false;
-            const chunkPx = Math.min(slicePx, canvas.height - offsetPx);
-            const chunk = document.createElement('canvas');
-            chunk.width = canvas.width;
-            chunk.height = chunkPx;
-            chunk.getContext('2d').drawImage(canvas, 0, offsetPx, canvas.width, chunkPx, 0, 0, canvas.width, chunkPx);
-            const chunkH = (chunkPx * PAGE_W) / canvas.width;
-            pdf.addImage(chunk.toDataURL('image/png'), 'PNG', 0, 0, PAGE_W, chunkH);
-            offsetPx += chunkPx;
-          }
-        }
-      }
-
+      const pdf = await buildPdf(printViewRef.current);
       const slug = (user?.gardenName || 'garden')
         .toLowerCase()
         .replace(/\s+/g, '-')
@@ -228,39 +237,21 @@ export default function GardenMap() {
       setPdfError('Could not generate PDF — please try again');
       setTimeout(() => setPdfError(null), 4000);
     } finally {
-      setIsPdfLoading(false);
+      setPdfAction(null);
     }
   }
 
   async function handlePrint() {
-    setIsPdfLoading(true);
+    if (!printViewRef.current) return;
+    setPdfAction('print');
     try {
-      const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([
-        import('jspdf'),
-        import('html2canvas'),
-      ]);
-      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'letter' });
-      const sections = Array.from(
-        printViewRef.current.querySelectorAll('[data-print-section]')
-      ).sort((a, b) => a.dataset.printSection.localeCompare(b.dataset.printSection));
-      let firstPage = true;
-      for (const section of sections) {
-        const canvas = await html2canvas(section, { scale: 2, useCORS: true, logging: false });
-        const imgData = canvas.toDataURL('image/png');
-        const PAGE_W = pdf.internal.pageSize.getWidth();
-        const PAGE_H = pdf.internal.pageSize.getHeight();
-        const imgH = (canvas.height * PAGE_W) / canvas.width;
-        if (!firstPage) pdf.addPage();
-        firstPage = false;
-        pdf.addImage(imgData, 'PNG', 0, 0, PAGE_W, Math.min(imgH, PAGE_H));
-      }
-      const url = pdf.output('bloburl');
-      window.open(url);
+      const pdf = await buildPdf(printViewRef.current);
+      window.open(pdf.output('bloburl'));
     } catch {
       setPdfError('Could not generate PDF — please try again');
       setTimeout(() => setPdfError(null), 4000);
     } finally {
-      setIsPdfLoading(false);
+      setPdfAction(null);
     }
   }
 
@@ -341,15 +332,16 @@ export default function GardenMap() {
           <button
             className="btn-secondary print:hidden"
             onClick={handlePrint}
+            disabled={pdfAction !== null}
           >
-            Print
+            {pdfAction === 'print' ? 'Generating…' : 'Print'}
           </button>
           <button
             className="btn-secondary print:hidden"
             onClick={handleDownloadPdf}
-            disabled={isPdfLoading}
+            disabled={pdfAction !== null}
           >
-            {isPdfLoading ? 'Generating…' : 'Download PDF'}
+            {pdfAction === 'download' ? 'Generating…' : 'Download PDF'}
           </button>
           {isOwner && (
             <button className="btn-primary" onClick={() => setShowAddForm((v) => !v)}>
@@ -424,30 +416,24 @@ export default function GardenMap() {
           className="relative select-none"
           style={{ width: gridWidth, height: gridHeight }}
         >
-          {/* Background grid dots */}
+          {/* Background grid dots — rendered via SVG pattern (1 node, any grid size) */}
           <svg
             className="absolute inset-0 pointer-events-none"
             width={gridWidth}
             height={gridHeight}
           >
-            {Array.from({ length: gardenHeight + 1 }, (_, r) =>
-              Array.from({ length: gardenWidth + 1 }, (_, c) => (
-                <circle
-                  key={`${r}-${c}`}
-                  cx={c * CELL_PX}
-                  cy={r * CELL_PX}
-                  r={1.5}
-                  fill="#d1c4b0"
-                  opacity={0.5}
-                />
-              ))
-            )}
+            <defs>
+              <pattern id="dot-grid" x="0" y="0" width={CELL_PX} height={CELL_PX} patternUnits="userSpaceOnUse">
+                <circle cx="0" cy="0" r="1.5" fill="#d1c4b0" opacity="0.5" />
+              </pattern>
+            </defs>
+            <rect width={gridWidth} height={gridHeight} fill="url(#dot-grid)" />
           </svg>
 
           {/* Placed beds */}
-          {placedBeds.map((bed, idx) => {
+          {placedBeds.map((bed) => {
             const isDragging = dragging?.bedId === bed._id;
-            const colors = BED_COLORS[idx % BED_COLORS.length];
+            const colors = BED_COLORS[beds.indexOf(bed) % BED_COLORS.length];
             const displayRow = isDragging ? dragging.liveRow : bed.mapRow;
             const displayCol = isDragging ? dragging.liveCol : bed.mapCol;
             const plantedCount = bed.cells?.filter((c) => c.plantId).length ?? 0;
@@ -456,7 +442,7 @@ export default function GardenMap() {
             return (
               <div
                 key={bed._id}
-                className={`absolute rounded border-2 flex flex-col items-center justify-center
+                className={`group absolute rounded border-2 flex flex-col items-center justify-center
                   overflow-hidden ${colors.bg} ${colors.border}
                   ${isDragging ? 'opacity-70 shadow-lg z-10 cursor-grabbing' : isOwner ? 'cursor-grab' : ''}
                   transition-shadow`}
@@ -506,7 +492,7 @@ export default function GardenMap() {
                 {/* Label */}
                 <div className={`relative z-10 text-center px-1 ${colors.text}`}>
                   <p className="font-semibold leading-tight text-[11px]">
-                    {bed.name.split(' — ')[1] || bed.name}
+                    {displayName(bed.name)}
                   </p>
                   <p className="text-[10px] opacity-70 mt-0.5">{bed.rows}×{bed.cols} ft</p>
                   {plantedCount > 0 && (
@@ -526,15 +512,10 @@ export default function GardenMap() {
             Unplaced beds
             <span className="ml-1 text-garden-500 font-normal">— drag onto the map to place</span>
           </h2>
-          <div
-            className="flex flex-wrap gap-3"
-            onPointerMove={handlePointerMove}
-            onPointerUp={handlePointerUp}
-          >
+          <div className="flex flex-wrap gap-3">
             {unplacedBeds.map((bed) => {
               const isDragging = dragging?.bedId === bed._id;
-              const allIdx = beds.indexOf(bed);
-              const colors = BED_COLORS[allIdx % BED_COLORS.length];
+              const colors = BED_COLORS[beds.indexOf(bed) % BED_COLORS.length];
               return (
                 <div
                   key={bed._id}
@@ -552,7 +533,7 @@ export default function GardenMap() {
                   onPointerDown={(e) => handlePointerDown(e, bed)}
                 >
                   <p className="font-semibold leading-tight text-[11px] px-1 text-center">
-                    {bed.name.split(' — ')[1] || bed.name}
+                    {displayName(bed.name)}
                   </p>
                   <p className="text-[10px] opacity-70">{bed.rows}×{bed.cols} ft</p>
                 </div>
@@ -570,8 +551,8 @@ export default function GardenMap() {
         <div className="mt-6">
           <h2 className="font-semibold text-garden-900 mb-3 text-sm">Beds</h2>
           <div className="flex flex-wrap gap-2">
-            {placedBeds.map((bed, idx) => {
-              const colors = BED_COLORS[idx % BED_COLORS.length];
+            {placedBeds.map((bed) => {
+              const colors = BED_COLORS[beds.indexOf(bed) % BED_COLORS.length];
               return (
                 <button
                   key={bed._id}
@@ -580,7 +561,7 @@ export default function GardenMap() {
                     ${colors.bg} ${colors.border} ${colors.text} hover:brightness-95 transition-all`}
                 >
                   <span className="w-2 h-2 rounded-full bg-current opacity-60" />
-                  {bed.name.split(' — ')[1] || bed.name}
+                  {displayName(bed.name)}
                   <span className="opacity-60">{bed.rows * bed.cols} sq ft</span>
                 </button>
               );
