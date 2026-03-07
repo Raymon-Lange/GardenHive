@@ -341,6 +341,52 @@ describe('PUT /api/beds/:id/cells', () => {
   });
 });
 
+// ── DELETE /api/beds/:id/cells ────────────────────────────────────────────────
+
+describe('DELETE /api/beds/:id/cells', () => {
+  it('returns 401 with no token', async () => {
+    const res = await api().delete('/api/beds/000000000000000000000001/cells');
+    expect(res.status).toBe(401);
+  });
+
+  it('returns 200 and empties cells for the owner', async () => {
+    const { user, token } = await createUser();
+    const plant = await createSystemPlant();
+    const garden = await createGarden(user._id);
+    const bed = await createBed(user._id, garden._id, {
+      cells: [{ row: 0, col: 0, plantId: plant._id }, { row: 1, col: 1, plantId: plant._id }],
+    });
+    const res = await api()
+      .delete(`/api/beds/${bed._id}/cells`)
+      .set('Authorization', `Bearer ${token}`);
+    expect(res.status).toBe(200);
+    expect(res.body.cells).toEqual([]);
+  });
+
+  it('returns 200 when bed already has no cells (idempotent)', async () => {
+    const { user, token } = await createUser();
+    const garden = await createGarden(user._id);
+    const bed = await createBed(user._id, garden._id);
+    const res = await api()
+      .delete(`/api/beds/${bed._id}/cells`)
+      .set('Authorization', `Bearer ${token}`);
+    expect(res.status).toBe(200);
+    expect(res.body.cells).toEqual([]);
+  });
+
+  it('returns 403 for helper with full permission', async () => {
+    const { user: owner } = await createUser();
+    const garden = await createGarden(owner._id);
+    const { user: helper, token: helperToken } = await createHelper();
+    await createGrant(owner._id, helper._id, helper.email, 'full');
+    const bed = await createBed(owner._id, garden._id);
+    const res = await api()
+      .delete(`/api/beds/${bed._id}/cells?ownerId=${owner._id}`)
+      .set('Authorization', `Bearer ${helperToken}`);
+    expect(res.status).toBe(403);
+  });
+});
+
 // ── DELETE /api/beds/:id ──────────────────────────────────────────────────────
 
 describe('DELETE /api/beds/:id', () => {

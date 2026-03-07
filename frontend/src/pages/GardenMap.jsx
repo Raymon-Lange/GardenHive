@@ -145,13 +145,13 @@ export default function GardenMap() {
     e.preventDefault();
     e.currentTarget.setPointerCapture(e.pointerId);
 
-    const gridRect = gridRef.current?.getBoundingClientRect();
-    if (!gridRect) return;
+    if (!gridRef.current) return;
 
-    const bedLeft = (bed.mapCol ?? 0) * CELL_PX;
-    const bedTop  = (bed.mapRow ?? 0) * CELL_PX;
-    const grabOffsetX = e.clientX - gridRect.left - bedLeft;
-    const grabOffsetY = e.clientY - gridRect.top  - bedTop;
+    // Use the tile's own bounding rect so the offset is correct for both
+    // placed beds (inside the grid) and unplaced beds (in the staging area).
+    const tileRect = e.currentTarget.getBoundingClientRect();
+    const grabOffsetX = e.clientX - tileRect.left;
+    const grabOffsetY = e.clientY - tileRect.top;
 
     setDragging({
       bedId:        bed._id,
@@ -296,6 +296,14 @@ export default function GardenMap() {
 
   const placedBeds   = beds.filter((b) => b.mapRow != null && b.mapCol != null);
   const unplacedBeds = beds.filter((b) => b.mapRow == null || b.mapCol == null);
+
+  // Ghost shown on the map canvas while an unplaced bed is being dragged in
+  const draggingUnplacedBed = dragging
+    ? beds.find((b) => b._id === dragging.bedId && b.mapRow == null)
+    : null;
+  const draggingUnplacedColors = draggingUnplacedBed
+    ? BED_COLORS[beds.indexOf(draggingUnplacedBed) % BED_COLORS.length]
+    : null;
 
   return (
     <div
@@ -502,6 +510,24 @@ export default function GardenMap() {
               </div>
             );
           })}
+          {/* Ghost of an unplaced bed being dragged onto the map */}
+          {draggingUnplacedBed && dragging.didMove && (
+            <div
+              className={`absolute rounded border-2 pointer-events-none opacity-60
+                flex flex-col items-center justify-center
+                ${draggingUnplacedColors.bg} ${draggingUnplacedColors.border} ${draggingUnplacedColors.text}`}
+              style={{
+                left:   dragging.liveCol * CELL_PX,
+                top:    dragging.liveRow * CELL_PX,
+                width:  draggingUnplacedBed.cols * CELL_PX,
+                height: draggingUnplacedBed.rows * CELL_PX,
+              }}
+            >
+              <p className="font-semibold leading-tight text-[11px] px-1 text-center">
+                {displayName(draggingUnplacedBed.name)}
+              </p>
+            </div>
+          )}
         </div>
       </div>
 

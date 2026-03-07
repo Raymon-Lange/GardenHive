@@ -24,6 +24,8 @@ Auto-generated from all feature plans. Last updated: 2026-02-23
 - MongoDB 7 — new `gardens` collection; additive `gardenId` field on `GardenBed`; additive `activeGardenId` on `User` (012-multiple-gardens)
 - JavaScript + React 19 (frontend only — no backend changes) + TanStack React Query 5, React Router 7, Lucide React, Tailwind CSS 3 (all already installed) (013-map-garden-switcher)
 - N/A — no new storage; existing `User.activeGardenId` persists the active garden (013-map-garden-switcher)
+- Node.js 22 (backend) / React 19 + JSX (frontend) + Express 5, Mongoose 9, TanStack React Query 5, React Router 7, Tailwind CSS 3, Lucide React (all already installed — no new packages) (014-bed-planting-ui)
+- MongoDB 7 — no new collections; additive write path on existing `GardenBed.cells` (014-bed-planting-ui)
 
 - Node.js 22 (backend) / JavaScript + React 19 (frontend) + Express 5, Mongoose 9, React Router 7, TanStack React (001-existing-features)
 
@@ -44,9 +46,9 @@ npm test && npm run lint
 Node.js 22 (backend) / JavaScript + React 19 (frontend): Follow standard conventions
 
 ## Recent Changes
+- 014-bed-planting-ui: Added Node.js 22 (backend) / React 19 + JSX (frontend) + Express 5, Mongoose 9, TanStack React Query 5, React Router 7, Tailwind CSS 3, Lucide React (all already installed — no new packages)
 - 013-map-garden-switcher: Added JavaScript + React 19 (frontend only — no backend changes) + TanStack React Query 5, React Router 7, Lucide React, Tailwind CSS 3 (all already installed)
 - 012-multiple-gardens: Added Node.js 22 (backend) / React 19 + JSX (frontend) + Express 5, Mongoose 9, TanStack React Query 5, React Router 7, Tailwind CSS 3, Lucide React, csv-parse 6.x (already installed), multer v2 (already installed)
-- 011-standard-guest-plan: Added JavaScript + React 19 (frontend only — no backend changes) + jsPDF 4.x + html2canvas 1.x (already installed), React Router 7, TanStack React Query 5
 
 
 <!-- MANUAL ADDITIONS START -->

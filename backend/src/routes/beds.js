@@ -149,6 +149,19 @@ router.put('/:id/cells', requireAccess('full'), async (req, res) => {
   }
 });
 
+// DELETE /api/beds/:id/cells — clear all plant assignments (owner only)
+router.delete('/:id/cells', requireAccess('owner'), async (req, res) => {
+  try {
+    const bed = await GardenBed.findById(req.params.id);
+    if (!bed) return res.status(404).json({ error: 'Bed not found' });
+    bed.cells = [];
+    await bed.save();
+    res.json(bed);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // DELETE /api/beds/:id — owner only
 router.delete('/:id', requireAccess('full'), async (req, res) => {
   try {
