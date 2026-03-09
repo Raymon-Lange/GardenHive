@@ -1,19 +1,20 @@
 /**
  * US2 — Garden Bed Management
  *
- * Tests: garden setup, create bed, assign plant, remove plant, beds list, PDF download
+ * Tests: garden setup, create bed, assign plant, remove plant, beds list
  *
  * All tests use the isolatedPage fixture (per-test isolated user + teardown).
- * Tests 2–6 pre-configure garden dimensions in beforeEach.
+ * Tests 2–5 pre-configure garden dimensions in beforeEach.
  *
  * Selector notes:
  *   - GardenDimensionsModal inputs use placeholder "e.g. 20" / "e.g. 12"
  *   - Add-bed form inputs: bed name has placeholder; width/height are plain number inputs
  *   - Bed cells are <button class="w-14 h-14 rounded-lg border-2 ...">
+ *
+ * PDF tests live in pdf.spec.js — run with RUN_PDF_TESTS=1.
  */
 
 import { test, expect } from './fixtures/index.js';
-import { readFileSync } from 'fs';
 
 const BASE_URL = process.env.BASE_URL ?? 'http://localhost:5173';
 const API_URL = process.env.API_URL ?? BASE_URL;
@@ -71,14 +72,6 @@ async function assignPlantToCell(token, bedId, plantId, row = 0, col = 0) {
   });
 }
 
-async function placeBedOnMap(token, bedId, mapRow = 0, mapCol = 0) {
-  await fetch(`${API_URL}/api/beds/${bedId}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ mapRow, mapCol }),
-  });
-}
-
 // ── Test 1: garden setup modal (no beforeEach — new user has no dimensions set) ─
 
 test('garden setup modal appears and submitting shows the grid', async ({ isolatedPage }) => {
@@ -123,7 +116,7 @@ test.describe('with garden configured', () => {
     await expect(page.getByText('E2E Bed')).toBeVisible();
   });
 
-  test('clicking empty cell opens plant picker and assigned plant emoji appears', async ({ isolatedPage }) => {
+  test('selecting a plant then clicking empty cell stamps the plant emoji', async ({ isolatedPage }) => {
     const { page, token } = isolatedPage;
 
     const bed = await createBed(token);
@@ -131,21 +124,21 @@ test.describe('with garden configured', () => {
 
     await page.goto(`/beds/${bed._id}`);
 
-    // Cells are <button class="w-14 h-14 ..."> — click the first (empty) cell
+    // Select a plant from the right-hand plant panel — this activates stamp mode
+    await page.locator('aside').getByText(plant.name).click();
+
+    // Stamp mode banner should confirm the selection
+    await expect(page.getByText(`Stamping:`)).toBeVisible();
+
+    // Click the first empty cell (contains a '+' span)
     const cell = page.locator('button').filter({ hasText: '+' }).first();
     await cell.click();
-
-    // Plant picker dialog should open
-    await expect(page.getByText('Choose a plant')).toBeVisible();
-
-    // Click the first plant option in the list
-    await page.locator('button').filter({ hasText: plant.name }).first().click();
 
     // The cell should now show the plant's emoji
     await expect(page.getByText(plant.emoji).first()).toBeVisible();
   });
 
-  test('clicking assigned cell and choosing clear removes the plant', async ({ isolatedPage }) => {
+  test('selecting the same plant and clicking a planted cell removes it', async ({ isolatedPage }) => {
     const { page, token } = isolatedPage;
 
     const bed = await createBed(token);
@@ -157,16 +150,16 @@ test.describe('with garden configured', () => {
     // Plant emoji should be visible in the assigned cell
     await expect(page.getByText(plant.emoji).first()).toBeVisible();
 
-    // Click the assigned cell (it has the plant name in its title)
+    // Select the same plant from the panel to activate stamp mode
+    await page.locator('aside').getByText(plant.name).click();
+    await expect(page.getByText('Stamping:')).toBeVisible();
+
+    // Click the planted cell — same plant selected, so it toggles off (removes the plant)
     const assignedCell = page.locator(`button[title*="${plant.name}"]`).first();
     await assignedCell.click();
 
-    // "Clear cell" option appears in the picker
-    await expect(page.getByRole('button', { name: 'Clear cell' })).toBeVisible();
-    await page.getByRole('button', { name: 'Clear cell' }).click();
-
-    // Emoji should no longer be present in any cell
-    await expect(page.getByText(plant.emoji).first()).not.toBeVisible();
+    // Emoji should no longer be present in any cell button (the banner still shows it — scope to w-14 cells)
+    await expect(page.locator('button.w-14').filter({ hasText: plant.emoji })).not.toBeVisible();
   });
 
   test('beds list page shows all created beds', async ({ isolatedPage }) => {
@@ -181,55 +174,4 @@ test.describe('with garden configured', () => {
     await expect(page.getByText('E2E Bed Beta')).toBeVisible();
   });
 
-  test('download PDF button triggers a valid PDF file download', async ({ isolatedPage }) => {
-    const { page, token } = isolatedPage;
-
-    const bed = await createBed(token, 'E2E PDF Bed');
-    const plant = await getFirstPublicPlant();
-    await assignPlantToCell(token, bed._id, plant._id);
-    // Place the bed on the map so it appears in the PDF
-    await placeBedOnMap(token, bed._id);
-
-    await page.goto('/map');
-
-    const [download] = await Promise.all([
-      page.waitForEvent('download'),
-      page.getByRole('button', { name: 'Download PDF' }).click(),
-    ]);
-
-    expect(download.suggestedFilename()).toMatch(/\w+-\d{4}-\d{2}-\d{2}\.pdf$/);
-
-    const filePath = await download.path();
-    const buffer = readFileSync(filePath);
-    expect(buffer.slice(0, 4).toString()).toBe('%PDF');
-  });
-});
-
-test.describe('PDF garden-size scenarios', () => {
-  const scenarios = [
-    { name: 'tiny-dense',        width: 4,  height: 6  },
-    { name: 'small-standard',    width: 10, height: 12 },
-    { name: 'medium-mixed',      width: 20, height: 30 },
-    { name: 'large-sparse',      width: 50, height: 80 },
-    { name: 'narrow-landscape',  width: 8,  height: 40 },
-    { name: 'many-beds',         width: 30, height: 50 },
-  ];
-
-  for (const scenario of scenarios) {
-    test(`PDF downloads without error — ${scenario.name} (${scenario.width}×${scenario.height} ft)`, async ({ isolatedPage }) => {
-      const { page, token } = isolatedPage;
-
-      await setGardenDimensions(token, page, scenario.width, scenario.height);
-
-      await page.goto('/map');
-      await page.waitForSelector('[data-testid="garden-grid"], .garden-grid, [aria-label="Garden Map"]', { timeout: 10000 }).catch(() => {});
-
-      const [download] = await Promise.all([
-        page.waitForEvent('download', { timeout: 30000 }),
-        page.getByRole('button', { name: /download pdf/i }).click(),
-      ]);
-
-      expect(download.suggestedFilename()).toMatch(/\w+-\d{4}-\d{2}-\d{2}\.pdf$/);
-    });
-  }
 });
