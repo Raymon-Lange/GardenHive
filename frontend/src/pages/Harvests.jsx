@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../lib/api';
-import { Plus, Trash2, Leaf, Download, Upload } from 'lucide-react';
+import { Plus, Trash2, Leaf, Download, Upload, Search, X } from 'lucide-react';
 import HarvestImportModal from '../components/HarvestImportModal';
 import { useAuth } from '../context/AuthContext';
 import { useGarden } from '../context/GardenContext';
@@ -23,10 +23,10 @@ function useBeds(gardenId) {
   });
 }
 
-function useHarvests() {
+function useHarvests(params = {}) {
   return useQuery({
-    queryKey: ['harvests'],
-    queryFn: () => api.get('/harvests').then((r) => r.data),
+    queryKey: ['harvests', params],
+    queryFn: () => api.get('/harvests', { params }).then((r) => r.data),
   });
 }
 
@@ -41,9 +41,19 @@ export default function Harvests() {
   const currentGarden = gardens.find((g) => g._id === currentGardenId);
   const { data: plants = [] } = usePlants();
   const { data: beds = [] } = useBeds(currentGardenId);
-  const { data: harvests = [], isLoading } = useHarvests();
+  const harvestParams = {};
+  if (startDate) harvestParams.startDate = startDate;
+  if (endDate) harvestParams.endDate = endDate;
+  const { data: harvests = [], isLoading } = useHarvests(harvestParams);
+
+  const displayed = search
+    ? harvests.filter((h) => (h.plantId?.name ?? '').toLowerCase().includes(search.toLowerCase()))
+    : harvests;
 
   const [importOpen, setImportOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
   const [form, setForm] = useState({
     plantId: '',
@@ -230,13 +240,54 @@ export default function Harvests() {
 
       {/* History */}
       <div>
-        <h2 className="font-semibold text-garden-900 mb-3">Recent harvests</h2>
+        <div className="flex flex-wrap items-end gap-3 mb-3">
+          <h2 className="font-semibold text-garden-900">Recent harvests</h2>
+          <div className="flex flex-wrap items-center gap-2 ml-auto">
+            <div className="relative">
+              <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-garden-400 pointer-events-none" />
+              <input
+                type="text"
+                className="input pl-8 py-1.5 text-sm w-44"
+                placeholder="Search by plant…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+            <input
+              type="date"
+              className="input py-1.5 text-sm"
+              title="From date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+            />
+            <span className="text-garden-400 text-sm">–</span>
+            <input
+              type="date"
+              className="input py-1.5 text-sm"
+              title="To date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+            />
+            {(search || startDate || endDate) && (
+              <button
+                className="btn-secondary flex items-center gap-1 text-sm py-1.5"
+                onClick={() => { setSearch(''); setStartDate(''); setEndDate(''); }}
+              >
+                <X size={13} /> Clear
+              </button>
+            )}
+          </div>
+        </div>
         {isLoading ? (
           <p className="text-garden-500 text-sm">Loading…</p>
         ) : harvests.length === 0 ? (
           <div className="card p-10 text-center">
             <Leaf size={36} className="text-garden-300 mx-auto mb-3" />
             <p className="text-garden-600">No harvests logged yet.</p>
+          </div>
+        ) : displayed.length === 0 ? (
+          <div className="card p-10 text-center">
+            <p className="text-garden-600">No harvests match your filters.</p>
           </div>
         ) : (
           <div className="card overflow-hidden">
@@ -253,7 +304,7 @@ export default function Harvests() {
                 </tr>
               </thead>
               <tbody>
-                {harvests.map((h) => (
+                {displayed.map((h) => (
                   <tr key={h._id} className="border-b border-garden-50 hover:bg-garden-50 transition-colors">
                     <td className="px-4 py-3">
                       <span className="flex items-center gap-2">

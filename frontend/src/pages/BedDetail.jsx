@@ -58,8 +58,11 @@ export default function BedDetail() {
   }
 
   function handleCellClick(row, col) {
-    if (!selectedPlant) return;
     const cell = getCell(row, col);
+    if (!selectedPlant) {
+      if (cell?.plantId) updateCell.mutate({ row, col, plantId: null });
+      return;
+    }
     if (cell?.plantId?._id === selectedPlant._id) {
       updateCell.mutate({ row, col, plantId: null });
     } else {
@@ -140,12 +143,16 @@ export default function BedDetail() {
                       onClick={() => handleCellClick(row, col)}
                       className={clsx(
                         'w-14 h-14 rounded-lg border-2 flex flex-col items-center justify-center transition-all hover:scale-105',
-                        plant
+                        plant && !selectedPlant
+                          ? 'bg-garden-100 border-garden-300 hover:bg-red-50 hover:border-red-300'
+                          : plant
                           ? 'bg-garden-100 border-garden-300 hover:border-garden-400'
                           : 'bg-white border-garden-200 hover:border-garden-400 hover:bg-garden-50'
                       )}
                       title={
-                        plant
+                        plant && !selectedPlant
+                          ? 'Click to remove'
+                          : plant
                           ? `${plant.emoji} ${plant.name}`
                           : selectedPlant
                           ? `Plant ${selectedPlant.name} here`

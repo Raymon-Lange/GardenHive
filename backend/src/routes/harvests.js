@@ -366,16 +366,22 @@ router.get('/monthly', requireAccess('analytics'), async (req, res) => {
 // GET /api/harvests
 router.get('/', requireAccess('analytics'), async (req, res) => {
   try {
-    const { season, plantId, limit = 50 } = req.query;
+    const { season, plantId, limit, startDate, endDate } = req.query;
     const filter = { userId: req.gardenOwnerId };
     if (season) filter.season = season;
     if (plantId) filter.plantId = plantId;
+    if (startDate || endDate) {
+      filter.harvestedAt = {};
+      if (startDate) filter.harvestedAt.$gte = new Date(startDate);
+      if (endDate) filter.harvestedAt.$lte = new Date(endDate);
+    }
+    const effectiveLimit = limit != null ? Number(limit) : 200;
     const harvests = await Harvest.find(filter)
       .populate('plantId', 'name emoji category')
       .populate('bedId', 'name')
       .populate('loggedById', 'name')
       .sort({ harvestedAt: -1 })
-      .limit(Number(limit));
+      .limit(effectiveLimit);
     res.json(harvests);
   } catch (err) {
     res.status(500).json({ error: err.message });
