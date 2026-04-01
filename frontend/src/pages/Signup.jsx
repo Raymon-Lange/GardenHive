@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { useAuth } from '../context/AuthContext';
 import api from '../lib/api';
 import clsx from 'clsx';
@@ -61,6 +62,10 @@ export default function Signup() {
 
   return (
     <div className="min-h-screen bg-garden-50 flex items-center justify-center px-4">
+      <Helmet>
+        <title>Create Your Account | GardenHive</title>
+        <meta name="robots" content="noindex, nofollow" />
+      </Helmet>
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <Link to="/" className="text-2xl font-bold text-garden-800">🌿 GardenHive</Link>

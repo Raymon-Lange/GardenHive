@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { useQuery } from '@tanstack/react-query';
 import { X, Search, Plus, Trash2, Download, AlertTriangle } from 'lucide-react';
 import clsx from 'clsx';
@@ -374,6 +375,19 @@ export default function StandardGuestPlanner() {
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <AppLayout>
+      <Helmet>
+        <title>Free Garden Bed Planner — Design Your Vegetable Garden Online | GardenHive</title>
+        <meta name="description" content="Plan your vegetable garden beds online for free. Build square foot garden grids, assign plants to every cell, and download a printable PDF — no account required." />
+        <meta property="og:title" content="Free Garden Bed Planner — Design Your Vegetable Garden Online | GardenHive" />
+        <meta property="og:description" content="Plan your vegetable garden beds online for free. Build square foot garden grids, assign plants to every cell, and download a printable PDF — no account required." />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://fire-hive.com/planner" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Free Garden Bed Planner — Design Your Vegetable Garden Online | GardenHive" />
+        <meta name="twitter:description" content="Plan your vegetable garden beds online for free. Build square foot garden grids, assign plants to every cell, and download a printable PDF — no account required." />
+        <link rel="canonical" href="https://fire-hive.com/planner" />
+      </Helmet>
+
       {/* Storage unavailable warning */}
       {storageAvailable.current === false && (
         <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-4 py-2.5 mb-4 text-sm text-amber-800">

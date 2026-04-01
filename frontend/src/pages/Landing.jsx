@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { useAuth } from '../context/AuthContext';
 import { Leaf, Grid3X3, BarChart3, ChevronRight, Map, TrendingUp, Activity } from 'lucide-react';
 
@@ -40,6 +41,18 @@ export default function Landing() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-garden-50 to-garden-100">
+      <Helmet>
+        <title>Square Foot Garden Planner &amp; Harvest Tracker | GardenHive</title>
+        <meta name="description" content="Plan your square foot garden beds, log every harvest, and track your yields season after season. Free garden planner included — no account needed." />
+        <meta property="og:title" content="Square Foot Garden Planner &amp; Harvest Tracker | GardenHive" />
+        <meta property="og:description" content="Plan your square foot garden beds, log every harvest, and track your yields season after season. Free garden planner included — no account needed." />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://fire-hive.com/" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Square Foot Garden Planner &amp; Harvest Tracker | GardenHive" />
+        <meta name="twitter:description" content="Plan your square foot garden beds, log every harvest, and track your yields season after season. Free garden planner included — no account needed." />
+        <link rel="canonical" href="https://fire-hive.com/" />
+      </Helmet>
       {/* Nav */}
       <header className="flex items-center justify-between px-8 py-5 max-w-5xl mx-auto">
         <span className="text-2xl font-bold text-garden-800">🌿 GardenHive</span>

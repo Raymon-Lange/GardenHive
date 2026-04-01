@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { HelmetProvider } from 'react-helmet-async';
 import { AuthProvider } from './context/AuthContext';
 import { GardenProvider } from './context/GardenContext';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -35,6 +36,7 @@ function PrivatePage({ children }) {
 
 export default function App() {
   return (
+    <HelmetProvider>
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <GardenProvider>
@@ -60,5 +62,6 @@ export default function App() {
         </GardenProvider>
       </AuthProvider>
     </QueryClientProvider>
+    </HelmetProvider>
   );
 }
