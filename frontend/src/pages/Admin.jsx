@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ShieldCheck, UserPlus, Trash2, Leaf, Pencil, Eye, EyeOff, ImagePlus } from 'lucide-react';
@@ -31,7 +31,7 @@ const BLANK_FORM = {
   perSqFt: 1, daysToHarvest: '', daysToGermination: '', spacingIn: '', depthIn: '',
 };
 
-function PlantForm({ initial, onSave, onCancel, isPending, error }) {
+function PlantForm({ initial, onSave, onCancel, isPending, error, isForking }) {
   const [form, setForm] = useState(initial ?? BLANK_FORM);
 
   function set(field, val) {
@@ -57,8 +57,14 @@ function PlantForm({ initial, onSave, onCancel, isPending, error }) {
   return (
     <form onSubmit={handleSubmit} className="card p-5 mt-4 space-y-4">
       <h3 className="font-semibold text-garden-900">
-        {initial ? 'Edit plant' : 'New plant'}
+        {isForking ? 'Customise plant' : initial ? 'Edit plant' : 'New plant'}
       </h3>
+
+      {isForking && (
+        <p className="text-xs text-garden-500 bg-garden-50 border border-garden-200 rounded-lg px-3 py-2">
+          This will create your own copy of the plant. The shared version will be hidden from your lists.
+        </p>
+      )}
 
       {error && (
         <div className="px-3 py-2 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg">
@@ -222,6 +228,7 @@ export default function Admin() {
   const [editingPlant, setEditingPlant] = useState(null); // null=hidden, {}=new, plant=edit
   const [plantError, setPlantError] = useState('');
   const [deleteError, setDeleteError] = useState('');
+  const plantFormRef = useRef(null);
 
   // ── Access queries / mutations ──────────────────────────────────────────────
   const { data: grants = [], isLoading: accessLoading } = useQuery({
@@ -286,6 +293,15 @@ export default function Admin() {
     onError: (err) => setPlantError(err.response?.data?.error || 'Failed to update plant'),
   });
 
+  const forkPlant = useMutation({
+    mutationFn: async ({ body, originalId }) => {
+      await api.post('/plants', body);
+      await api.post('/auth/me/hidden-plants', { plantId: originalId });
+    },
+    onSuccess: () => { invalidatePlants(); setEditingPlant(null); setPlantError(''); },
+    onError: (err) => setPlantError(err.response?.data?.error || 'Failed to save plant'),
+  });
+
   const deletePlant = useMutation({
     mutationFn: (id) => api.delete(`/plants/${id}`).then((r) => r.data),
     onSuccess: () => { invalidatePlants(); setDeleteError(''); },
@@ -298,7 +314,9 @@ export default function Admin() {
   }
 
   function handlePlantSave(body) {
-    if (editingPlant?._id) {
+    if (editingPlant?._id && !editingPlant.ownerId) {
+      forkPlant.mutate({ body, originalId: editingPlant._id });
+    } else if (editingPlant?._id) {
       updatePlant.mutate({ id: editingPlant._id, body });
     } else {
       createPlant.mutate(body);
@@ -315,12 +333,14 @@ export default function Admin() {
       spacingIn:         plant.spacingIn         ?? '',
       depthIn:           plant.depthIn           ?? '',
     });
+    setTimeout(() => plantFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
   }
 
   function startAdd() {
     setPlantError('');
     setDeleteError('');
     setEditingPlant({});
+    setTimeout(() => plantFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
   }
 
   // ── Garden Settings handlers ─────────────────────────────────────────────
@@ -560,28 +580,27 @@ export default function Admin() {
                       >
                         {plant.hidden ? <EyeOff size={15} /> : <Eye size={15} />}
                       </button>
-                      {/* Edit / Delete — custom plants only */}
+                      {/* Edit — all plants */}
+                      <button
+                        onClick={() => startEdit(plant)}
+                        className="p-2 text-garden-400 hover:text-garden-700 hover:bg-garden-100 rounded-lg transition-colors"
+                        title={plant.ownerId ? 'Edit' : 'Customise'}
+                      >
+                        <Pencil size={15} />
+                      </button>
+                      {/* Delete — custom plants only */}
                       {plant.ownerId && (
-                        <>
-                          <button
-                            onClick={() => startEdit(plant)}
-                            className="p-2 text-garden-400 hover:text-garden-700 hover:bg-garden-100 rounded-lg transition-colors"
-                            title="Edit"
-                          >
-                            <Pencil size={15} />
-                          </button>
-                          <button
-                            onClick={() => {
-                              setDeleteError('');
-                              deletePlant.mutate(plant._id);
-                            }}
-                            className="p-2 text-garden-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                            title="Delete"
-                            disabled={deletePlant.isPending}
-                          >
-                            <Trash2 size={15} />
-                          </button>
-                        </>
+                        <button
+                          onClick={() => {
+                            setDeleteError('');
+                            deletePlant.mutate(plant._id);
+                          }}
+                          className="p-2 text-garden-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Delete"
+                          disabled={deletePlant.isPending}
+                        >
+                          <Trash2 size={15} />
+                        </button>
                       )}
                     </div>
                   </div>
@@ -592,13 +611,16 @@ export default function Admin() {
 
           {/* Add / Edit form */}
           {editingPlant !== null && (
+            <div ref={plantFormRef}>
             <PlantForm
               initial={editingPlant?._id ? editingPlant : null}
               onSave={handlePlantSave}
               onCancel={() => { setEditingPlant(null); setPlantError(''); }}
-              isPending={createPlant.isPending || updatePlant.isPending}
+              isPending={createPlant.isPending || updatePlant.isPending || forkPlant.isPending}
               error={plantError}
+              isForking={!!(editingPlant?._id && !editingPlant.ownerId)}
             />
+            </div>
           )}
         </div>
       )}

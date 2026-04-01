@@ -127,7 +127,7 @@ router.put('/:id', requireAccess('full'), async (req, res) => {
 // PUT /api/beds/:id/cells — set a single cell's plant
 router.put('/:id/cells', requireAccess('full'), async (req, res) => {
   try {
-    const { row, col, plantId } = req.body;
+    const { row, col, plantId, quantity } = req.body;
     const bed = await GardenBed.findOne({ _id: req.params.id, userId: req.gardenOwnerId });
     if (!bed) return res.status(404).json({ error: 'Garden bed not found' });
 
@@ -137,8 +137,9 @@ router.put('/:id/cells', requireAccess('full'), async (req, res) => {
     } else {
       if (existingIdx !== -1) {
         bed.cells[existingIdx].plantId = plantId;
+        bed.cells[existingIdx].quantity = quantity ?? 1;
       } else {
-        bed.cells.push({ row, col, plantId });
+        bed.cells.push({ row, col, plantId, quantity: quantity ?? 1 });
       }
     }
     await bed.save();

@@ -5,6 +5,7 @@ const cellSchema = new mongoose.Schema(
     row: { type: Number, required: true },
     col: { type: Number, required: true },
     plantId: { type: mongoose.Schema.Types.ObjectId, ref: 'Plant', default: null },
+    quantity: { type: Number, default: 1 },
   },
   { _id: false }
 );

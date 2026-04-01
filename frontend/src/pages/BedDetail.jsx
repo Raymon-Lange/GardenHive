@@ -66,7 +66,7 @@ export default function BedDetail() {
     if (cell?.plantId?._id === selectedPlant._id) {
       updateCell.mutate({ row, col, plantId: null });
     } else {
-      updateCell.mutate({ row, col, plantId: selectedPlant._id });
+      updateCell.mutate({ row, col, plantId: selectedPlant._id, quantity: selectedPlant.perSqFt ?? 1 });
     }
   }
 
@@ -163,7 +163,7 @@ export default function BedDetail() {
                         <>
                           <span className="text-lg leading-none">{plant.emoji}</span>
                           <span className="text-[9px] text-garden-600 leading-tight text-center mt-0.5 px-0.5 truncate w-full text-center">
-                            {plant.name.split(' ')[0]}
+                            {(cell.quantity ?? 1) > 1 ? `×${cell.quantity}` : plant.name.split(' ')[0]}
                           </span>
                         </>
                       ) : (
@@ -187,7 +187,7 @@ export default function BedDetail() {
                     .reduce((acc, c) => {
                       const key = c.plantId._id;
                       acc[key] = acc[key] || { ...c.plantId, count: 0 };
-                      acc[key].count++;
+                      acc[key].count += (c.quantity ?? 1);
                       return acc;
                     }, {})
                 ).map(([, p]) => (
