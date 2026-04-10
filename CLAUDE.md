@@ -53,6 +53,53 @@ Node.js 22 (backend) / JavaScript + React 19 (frontend): Follow standard convent
 
 <!-- MANUAL ADDITIONS START -->
 
+## New Developer Setup
+
+If someone has just cloned the repo and wants to get the dev environment running, walk them through these steps in order:
+
+**Prerequisites**: Docker (with Compose v2), Node.js 22 (for running tests and Playwright locally).
+
+```bash
+# 1. Copy the backend env file
+cp backend/.env.example backend/.env
+# JWT_SECRET can stay as-is for local dev — just don't use it in production.
+
+# 2. Build the Docker images from source
+docker compose -f docker-compose.dev.yml build
+
+# 3. Start all services (MongoDB + backend + frontend via nginx)
+docker compose -f docker-compose.dev.yml up -d
+
+# 4. Seed demo data (run once — idempotent, safe to re-run)
+docker compose -f docker-compose.dev.yml exec backend npm run seed:all
+```
+
+The app is now at **http://localhost:5173**. Demo login: `mike@gardenhive.com` / `321qaz`.  
+Mongo Express (DB browser) is at **http://localhost:8081**.
+
+**Running tests after setup:**
+
+```bash
+# Backend unit tests (run inside the container or locally with Node 22 + a running MongoDB)
+cd backend && npm test
+
+# Playwright E2E tests (from repo root — requires the dev stack to be running)
+npx playwright install --with-deps   # first time only
+npx playwright test
+```
+
+The E2E suite needs a fixture user. On first run it will be created automatically via `tests/e2e/global-setup.js`.
+
+**Useful dev commands:**
+
+| Task | Command |
+|------|---------|
+| View backend logs | `docker compose -f docker-compose.dev.yml logs -f backend` |
+| Restart backend only | `docker compose -f docker-compose.dev.yml restart backend` |
+| Re-seed data | `docker compose -f docker-compose.dev.yml exec backend npm run seed:all` |
+| Stop everything | `docker compose -f docker-compose.dev.yml down` |
+| Rebuild after code changes | `docker compose -f docker-compose.dev.yml build && docker compose -f docker-compose.dev.yml up -d` |
+
 ## Always Read Before Starting Any Task
 
 - **Constitution**: `.specify/memory/constitution.md` — coding principles, naming conventions, patterns

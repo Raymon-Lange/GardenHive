@@ -4,42 +4,51 @@ Plan your vegetable garden, track what you grow, and analyse your harvests seaso
 
 Set up a grid-based garden map, drag beds into position, fill each square foot with a plant from the library, log harvests by weight, and share view or edit access with family or helpers. Export any garden layout to PDF with a built-in shopping list.
 
+## Getting started with Claude Code
+
+The recommended way to work on this project is with [Claude Code](https://claude.ai/code). Clone the repo, open it with Claude, and ask it to get you set up — it will read `CLAUDE.md` and `CLAUDE.md`-linked docs automatically and knows the full dev workflow.
+
+```bash
+git clone https://github.com/raymon-lange/GardenHive.git
+cd GardenHive
+claude   # opens Claude Code in this directory
+```
+
+Then just ask: **"Help me get the dev environment running"** — Claude will walk you through the rest.
+
+## Manual quick start (Docker)
+
+Requires: [Docker](https://docs.docker.com/get-docker/) and Docker Compose.
+
+```bash
+# 1. Clone & configure
+git clone https://github.com/raymon-lange/GardenHive.git
+cd GardenHive
+cp backend/.env.example backend/.env   # edit JWT_SECRET if desired
+
+# 2. Build and start all services (MongoDB + backend + frontend)
+docker compose -f docker-compose.dev.yml build
+docker compose -f docker-compose.dev.yml up -d
+
+# 3. Seed demo data (run once)
+docker compose -f docker-compose.dev.yml exec backend npm run seed:all
+```
+
+Open **http://localhost:5173** and log in with the demo account:
+
+| Field    | Value                  |
+|----------|------------------------|
+| Email    | `mike@gardenhive.com`  |
+| Password | `321qaz`               |
+
+> A Mongo Express UI is also available at **http://localhost:8081** for browsing the database.
+
 ## Stack
 
 - **Frontend** — React 19 + Vite 7 + Tailwind CSS 3 + Recharts
-- **Backend** — Node.js + Express 5
-- **Database** — MongoDB (local or Docker)
+- **Backend** — Node.js 22 + Express 5
+- **Database** — MongoDB 7
 - **Auth** — JWT + bcrypt
-
-## Quick start
-
-### 1. Start MongoDB
-
-```bash
-docker run -d --name gardenhive-mongo -p 27017:27017 mongo:7
-```
-
-Or install MongoDB locally and start `mongod`.
-
-### 2. Backend
-
-```bash
-cd backend
-cp .env.example .env   # edit JWT_SECRET if desired
-npm install
-npm run seed           # seeds plant library, demo user, beds & harvests (run once)
-npm run dev            # starts on http://localhost:5000
-```
-
-### 3. Frontend
-
-```bash
-cd frontend
-npm install
-npm run dev            # starts on http://localhost:5173
-```
-
-Open **http://localhost:5173**, sign up, and start gardening.
 
 ## Project structure
 
