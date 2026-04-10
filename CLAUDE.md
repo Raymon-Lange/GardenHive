@@ -60,18 +60,19 @@ If someone has just cloned the repo and wants to get the dev environment running
 **Prerequisites**: Docker (with Compose v2), Node.js 22 (for running tests and Playwright locally).
 
 ```bash
-# 1. Copy the backend env file
+# 1. Copy the env files
 cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env
 # JWT_SECRET can stay as-is for local dev — just don't use it in production.
 
 # 2. Build the Docker images from source
-docker compose -f docker-compose.dev.yml build
+docker compose -f docker-compose.yml -f docker-compose.dev.yml build
 
 # 3. Start all services (MongoDB + backend + frontend via nginx)
-docker compose -f docker-compose.dev.yml up -d
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
 
 # 4. Seed demo data (run once — idempotent, safe to re-run)
-docker compose -f docker-compose.dev.yml exec backend npm run seed:all
+docker compose -f docker-compose.yml -f docker-compose.dev.yml exec backend npm run seed:all
 ```
 
 The app is now at **http://localhost:5173**. Demo login: `mike@gardenhive.com` / `321qaz`.  
@@ -94,11 +95,11 @@ The E2E suite needs a fixture user. On first run it will be created automaticall
 
 | Task | Command |
 |------|---------|
-| View backend logs | `docker compose -f docker-compose.dev.yml logs -f backend` |
-| Restart backend only | `docker compose -f docker-compose.dev.yml restart backend` |
-| Re-seed data | `docker compose -f docker-compose.dev.yml exec backend npm run seed:all` |
-| Stop everything | `docker compose -f docker-compose.dev.yml down` |
-| Rebuild after code changes | `docker compose -f docker-compose.dev.yml build && docker compose -f docker-compose.dev.yml up -d` |
+| View backend logs | `docker compose -f docker-compose.yml -f docker-compose.dev.yml logs -f backend` |
+| Restart backend only | `docker compose -f docker-compose.yml -f docker-compose.dev.yml restart backend` |
+| Re-seed data | `docker compose -f docker-compose.yml -f docker-compose.dev.yml exec backend npm run seed:all` |
+| Stop everything | `docker compose -f docker-compose.yml -f docker-compose.dev.yml down` |
+| Rebuild after code changes | `docker compose -f docker-compose.yml -f docker-compose.dev.yml build && docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d` |
 
 ## Always Read Before Starting Any Task
 
