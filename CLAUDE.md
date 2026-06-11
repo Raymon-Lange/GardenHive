@@ -26,6 +26,8 @@ Auto-generated from all feature plans. Last updated: 2026-02-23
 - N/A — no new storage; existing `User.activeGardenId` persists the active garden (013-map-garden-switcher)
 - Node.js 22 (backend) / React 19 + JSX (frontend) + Express 5, Mongoose 9, TanStack React Query 5, React Router 7, Tailwind CSS 3, Lucide React (all already installed — no new packages) (014-bed-planting-ui)
 - MongoDB 7 — no new collections; additive write path on existing `GardenBed.cells` (014-bed-planting-ui)
+- JavaScript + React 19 (frontend only) + No new dependencies — Umami script loaded from external host via `<script>` tag (015-page-analytics)
+- N/A — analytics data stored on Umami server, not in the app (015-page-analytics)
 
 - Node.js 22 (backend) / JavaScript + React 19 (frontend) + Express 5, Mongoose 9, React Router 7, TanStack React (001-existing-features)
 
@@ -46,9 +48,9 @@ npm test && npm run lint
 Node.js 22 (backend) / JavaScript + React 19 (frontend): Follow standard conventions
 
 ## Recent Changes
+- 015-page-analytics: Added JavaScript + React 19 (frontend only) + No new dependencies — Umami script loaded from external host via `<script>` tag
 - 014-bed-planting-ui: Added Node.js 22 (backend) / React 19 + JSX (frontend) + Express 5, Mongoose 9, TanStack React Query 5, React Router 7, Tailwind CSS 3, Lucide React (all already installed — no new packages)
 - 013-map-garden-switcher: Added JavaScript + React 19 (frontend only — no backend changes) + TanStack React Query 5, React Router 7, Lucide React, Tailwind CSS 3 (all already installed)
-- 012-multiple-gardens: Added Node.js 22 (backend) / React 19 + JSX (frontend) + Express 5, Mongoose 9, TanStack React Query 5, React Router 7, Tailwind CSS 3, Lucide React, csv-parse 6.x (already installed), multer v2 (already installed)
 
 
 <!-- MANUAL ADDITIONS START -->
